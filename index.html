@@ -3,48 +3,93 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Casino Spin Wheel Game - Compatible with all browsers, TVs, and LED displays">
     <title>Casino Spin Wheel Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <style>
+        /* Reset with better cross-browser support */
         * {
             margin: 0;
             padding: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
             box-sizing: border-box;
         }
 
+        html {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            background: #040761;
+            background: -moz-linear-gradient(135deg, #040761 0%, #02006d 50%, #0e156b 100%);
+            background: -webkit-linear-gradient(135deg, #040761 0%, #02006d 50%, #0e156b 100%);
             background: linear-gradient(135deg, #040761 0%, #02006d 50%, #0e156b 100%);
+            background-color: #040761;
+            /* Fallback for older browsers */
             color: white;
             min-height: 100vh;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
+        /* Container for TV/LED optimization */
         .container {
-            /* max-width: ; */
+            max-width: 1920px;
             margin: 0 auto;
             padding: 24px;
+            width: 100%;
         }
 
+        @media (min-width: 2560px) {
+            .container {
+                max-width: 2560px;
+                padding: 48px;
+            }
+        }
+
+        @media (min-width: 3840px) {
+            .container {
+                max-width: 3840px;
+                padding: 64px;
+            }
+        }
+
+        /* Game Layout - Flexbox with fallbacks */
         .game-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            /* gap: 48px; */
-            /* padding-top: 40px; */
+            display: block;
         }
 
         @media (min-width: 768px) {
             .game-layout {
-                grid-template-columns: 1fr 1fr;
+                display: -webkit-box;
+                display: -moz-box;
+                display: -ms-flexbox;
+                display: -webkit-flex;
+                display: flex;
+                -webkit-flex-wrap: wrap;
+                -ms-flex-wrap: wrap;
+                flex-wrap: wrap;
+            }
+
+            .game-layout>* {
+                -webkit-box-flex: 1;
+                -moz-box-flex: 1;
+                -webkit-flex: 1;
+                -ms-flex: 1;
+                flex: 1;
+                min-width: 300px;
             }
         }
 
         /* Wheel Sections */
         .wheels-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            display: block;
         }
 
         .wheel-section {
@@ -52,15 +97,19 @@
             border-radius: 16px;
             border: 1px solid rgba(99, 102, 241, 0.4);
             background: rgba(255, 255, 255, 0.05);
-            /* backdrop-filter: blur(12px); */
-            /* padding: 24px; */
-            /* box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); */
+            margin-bottom: 20px;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
 
         .wheel-label {
             position: absolute;
             top: -16px;
-            left: 45%;
+            left: 50%;
+            -webkit-transform: translateX(-50%);
+            -moz-transform: translateX(-50%);
+            -ms-transform: translateX(-50%);
+            transform: translateX(-50%);
             padding: 4px 16px;
             border-radius: 9999px;
             background: #e0e7ff;
@@ -68,17 +117,27 @@
             font-weight: bold;
             font-size: 18px;
             letter-spacing: 0.05em;
+            white-space: nowrap;
         }
 
         .wheels-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 160px;
-            place-items: center;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: space-around;
+            -ms-flex-pack: space-around;
+            justify-content: space-around;
+            -webkit-align-items: center;
+            -ms-flex-align: center;
+            align-items: center;
             position: relative;
+            padding: 20px;
+            flex-wrap: wrap;
         }
 
-        /* Spin Wheel Component */
+        /* Spin Wheel Component - TV Optimized */
         .wheel-container {
             position: relative;
             width: 120px;
@@ -100,27 +159,56 @@
             }
         }
 
+        @media (min-width: 1920px) {
+            .wheel-container {
+                width: 320px;
+                height: 320px;
+            }
+        }
+
+        @media (min-width: 2560px) {
+            .wheel-container {
+                width: 400px;
+                height: 400px;
+            }
+        }
+
         .wheel-glow {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             border-radius: 50%;
+            background: -moz-linear-gradient(135deg, #facc15, #ec4899, #a855f7);
+            background: -webkit-linear-gradient(135deg, #facc15, #ec4899, #a855f7);
             background: linear-gradient(135deg, #facc15, #ec4899, #a855f7);
+            background-color: #facc15;
+            /* Fallback */
+            -webkit-filter: blur(16px);
+            -moz-filter: blur(16px);
+            -o-filter: blur(16px);
             filter: blur(16px);
-            /* opacity: 0.4; */
         }
 
         .wheel-rim {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             border-radius: 50%;
             background: #fbbf24;
-            /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); */
+            border: 2px solid #d97706;
         }
 
         .wheel-arrow {
             position: absolute;
             top: -16px;
             left: 50%;
+            -webkit-transform: translateX(-50%) rotate(60deg);
+            -moz-transform: translateX(-50%) rotate(60deg);
+            -ms-transform: translateX(-50%) rotate(60deg);
             transform: translateX(-50%) rotate(60deg);
             z-index: 50;
             width: 0;
@@ -128,9 +216,9 @@
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
             border-bottom: 18px solid #FFD700;
-            /* filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.9)); */
         }
 
+        /* Arrow size adjustments for different screens */
         @media (max-width: 767px) {
             .wheel-arrow {
                 top: -16px;
@@ -146,25 +234,55 @@
             }
         }
 
+        @media (min-width: 1920px) {
+            .wheel-arrow {
+                border-left: 14px solid transparent;
+                border-right: 14px solid transparent;
+                border-bottom: 24px solid #FFD700;
+                top: -8px;
+            }
+        }
+
         .wheel-main {
             position: absolute;
-            inset: 12px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
             border-radius: 50%;
+            -webkit-transition: -webkit-transform 7s ease-out;
+            -moz-transition: -moz-transform 7s ease-out;
             transition: transform 7s ease-out;
-            /* box-shadow: inset 0 10px 18px rgba(255, 255, 255, 0.25),
-                inset 0 -14px 22px rgba(0, 0, 0, 0.9); */
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         @media (min-width: 768px) {
             .wheel-main {
-                inset: 10px;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
             }
         }
 
         .wheel-number {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
         }
 
@@ -172,10 +290,14 @@
             margin-top: 12px;
             font-size: 10px;
             font-weight: 800;
-            /* filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.6)); */
+            -webkit-transform: rotate(103deg);
+            -moz-transform: rotate(103deg);
+            -ms-transform: rotate(103deg);
             transform: rotate(103deg);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
 
+        /* Font size scaling for TV/LED */
         @media (min-width: 768px) {
             .wheel-number span {
                 margin-top: 16px;
@@ -190,27 +312,53 @@
             }
         }
 
+        @media (min-width: 1920px) {
+            .wheel-number span {
+                margin-top: 28px;
+                font-size: 32px;
+            }
+        }
+
+        @media (min-width: 2560px) {
+            .wheel-number span {
+                margin-top: 36px;
+                font-size: 40px;
+            }
+        }
+
         .wheel-shine {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             border-radius: 50%;
-            /* background: radial-gradient(circle at top, rgba(255, 255, 255, 0.35), transparent 60%); */
             pointer-events: none;
+            background: -moz-radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+            background: -webkit-radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
         }
 
         .wheel-center-button {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             margin: auto;
             z-index: 50;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #fef3c7, #fbbf24, #d97706);
+            background: rgb(255, 255, 5);
             border: 1px solid rgba(253, 224, 71, 0.8);
-            /* backdrop-filter: blur(12px); */
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
             transition: all 0.3s;
             cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         @media (min-width: 768px) {
@@ -220,43 +368,70 @@
             }
         }
 
-        /* .wheel-center-button:hover {
-            box-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
-        } */
+        @media (min-width: 1920px) {
+            .wheel-center-button {
+                width: 80px;
+                height: 80px;
+            }
+        }
 
-        /* .wheel-center-button:active {
-            transform: scale(0.95);
-        } */
+        .wheel-center-button:hover,
+        .wheel-center-button:focus {
+            -webkit-transform: scale(1.1);
+            -moz-transform: scale(1.1);
+            transform: scale(1.1);
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
 
         .wheel-center-shine {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             border-radius: 50%;
-            /* background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1), transparent); */
+            background: -moz-linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1), transparent);
+            background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1), transparent);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1), transparent);
             opacity: 0.7;
             pointer-events: none;
         }
 
-        /* Selection Dropdown */
+        /* Selection Dropdown - TV Optimized */
         .selection-container {
             position: absolute;
             bottom: 2px;
             left: 50%;
+            -webkit-transform: translateX(-50%);
+            -moz-transform: translateX(-50%);
+            -ms-transform: translateX(-50%);
             transform: translateX(-50%);
             z-index: 20;
+            width: 90%;
+            max-width: 300px;
         }
 
         .selection-box {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-orient: vertical;
+            -moz-box-orient: vertical;
+            -ms-flex-direction: column;
+            -webkit-flex-direction: column;
             flex-direction: column;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
             align-items: center;
-            gap: 2px;
             border-radius: 12px;
             background: rgba(0, 0, 0, 0.6);
-            /* backdrop-filter: blur(12px); */
             border: 1px solid rgba(250, 204, 21, 0.5);
             padding: 4px 4px;
-            /* box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8); */
         }
 
         @media (min-width: 640px) {
@@ -265,19 +440,44 @@
             }
         }
 
+        @media (min-width: 1920px) {
+            .selection-box {
+                padding: 12px 16px;
+            }
+        }
+
         .selection-glow {
             position: absolute;
-            inset: -2px;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
             border-radius: 12px;
+            background: -moz-linear-gradient(left, #facc15, #fde047, #facc15);
+            background: -webkit-linear-gradient(left, #facc15, #fde047, #facc15);
             background: linear-gradient(90deg, #facc15, #fde047, #facc15);
-            /* opacity: 0.3; */
+            -webkit-filter: blur(4px);
+            -moz-filter: blur(4px);
             filter: blur(4px);
         }
 
         .selection-inputs {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
-            gap: 4px;
             z-index: 20;
+            width: 100%;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+
+        .selection-inputs>*:not(:last-child) {
+            margin-right: 4px;
         }
 
         .wheel-select {
@@ -287,11 +487,22 @@
             font-size: 12px;
             font-weight: 800;
             color: #fde047;
+            background: -moz-linear-gradient(top, #000, #18181b);
+            background: -webkit-linear-gradient(top, #000, #18181b);
             background: linear-gradient(180deg, #000, #18181b);
+            background-color: #000;
+            /* Fallback */
             border-radius: 6px;
             border: 1px solid rgba(234, 179, 8, 0.7);
-            /* box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.3); */
             cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .wheel-select:focus {
+            outline: 2px solid #facc15;
+            outline-offset: 1px;
         }
 
         @media (min-width: 640px) {
@@ -310,6 +521,14 @@
             }
         }
 
+        @media (min-width: 1920px) {
+            .wheel-select {
+                width: 60px;
+                height: 72px;
+                font-size: 24px;
+            }
+        }
+
         .wheel-select:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -320,14 +539,40 @@
             color: #000000;
         }
 
-        /* Info Panel */
+        /* Info Panel - TV Optimized */
         .info-panel {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-orient: vertical;
+            -moz-box-orient: vertical;
+            -ms-flex-direction: column;
+            -webkit-flex-direction: column;
             flex-direction: column;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
             align-items: center;
             text-align: center;
-            gap: 32px;
+            padding: 20px 0;
+        }
+
+        .info-panel>*:not(:last-child) {
+            margin-bottom: 32px;
+        }
+
+        @media (min-width: 1920px) {
+            .info-panel>*:not(:last-child) {
+                margin-bottom: 48px;
+            }
         }
 
         .game-timing {
@@ -336,9 +581,14 @@
             border-radius: 16px;
             border: 1px solid rgba(251, 113, 133, 0.4);
             background: rgba(255, 255, 255, 0.05);
-            /* backdrop-filter: blur(12px); */
             padding: 16px 24px;
-            /* box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); */
+        }
+
+        @media (min-width: 1920px) {
+            .game-timing {
+                max-width: 600px;
+                padding: 24px 32px;
+            }
         }
 
         .game-timing-label {
@@ -349,11 +599,33 @@
             margin-bottom: 8px;
         }
 
+        @media (min-width: 1920px) {
+            .game-timing-label {
+                font-size: 16px;
+            }
+        }
+
         .timing-display {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
             align-items: center;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
-            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .timing-display>*:not(:last-child) {
+            margin-right: 12px;
         }
 
         .time-badge {
@@ -363,6 +635,13 @@
             color: #fde047;
             font-weight: bold;
             font-size: 14px;
+        }
+
+        @media (min-width: 1920px) {
+            .time-badge {
+                font-size: 18px;
+                padding: 8px 24px;
+            }
         }
 
         .time-separator {
@@ -379,7 +658,16 @@
             border: 1px solid rgba(250, 204, 21, 0.7);
             background: rgba(0, 0, 0, 0.4);
             padding: 24px;
+            -webkit-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            -moz-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 1920px) {
+            .timer-box {
+                max-width: 600px;
+                padding: 32px;
+            }
         }
 
         .timer-title {
@@ -389,23 +677,57 @@
             letter-spacing: 0.025em;
         }
 
+        @media (min-width: 1920px) {
+            .timer-title {
+                font-size: 24px;
+                margin-bottom: 32px;
+            }
+        }
+
         .timer-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: space-around;
+            -ms-flex-pack: space-around;
+            justify-content: space-around;
         }
 
         .timer-item {
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(67, 56, 202, 0.5), rgba(49, 46, 129, 0.5));
+            background: rgba(67, 56, 202, 0.5);
             padding: 16px;
+            -webkit-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            -moz-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            -webkit-box-flex: 1;
+            -moz-box-flex: 1;
+            -webkit-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            margin: 0 8px;
+        }
+
+        @media (min-width: 1920px) {
+            .timer-item {
+                padding: 24px;
+                margin: 0 16px;
+            }
         }
 
         .timer-value {
             font-size: 36px;
             font-weight: bold;
             color: #fde047;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 1920px) {
+            .timer-value {
+                font-size: 48px;
+            }
         }
 
         .timer-label {
@@ -416,10 +738,29 @@
             margin-top: 4px;
         }
 
+        @media (min-width: 1920px) {
+            .timer-label {
+                font-size: 16px;
+            }
+        }
+
         /* Waiting State */
         .waiting-container {
-            display: grid;
-            place-items: center;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
+            align-items: center;
         }
 
         .waiting-box {
@@ -428,20 +769,57 @@
             max-width: 384px;
             overflow: hidden;
             border-radius: 16px;
-            background: linear-gradient(135deg, rgba(67, 56, 202, 0.4), rgba(55, 48, 163, 0.4), rgba(49, 46, 129, 0.5));
+            background: rgba(67, 56, 202, 0.4);
             padding: 24px;
-            /* box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(12px); */
             border: 1px solid rgba(129, 140, 248, 0.3);
+        }
+
+        @media (min-width: 1920px) {
+            .waiting-box {
+                max-width: 500px;
+                padding: 32px;
+            }
         }
 
         .waiting-pulse {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             z-index: -1;
+            -webkit-animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            -moz-animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
             background: rgba(99, 102, 241, 0.1);
+            -webkit-filter: blur(32px);
+            -moz-filter: blur(32px);
             filter: blur(32px);
+        }
+
+        /* Keyframes with vendor prefixes */
+        @-webkit-keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @-moz-keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         @keyframes pulse {
@@ -457,7 +835,15 @@
         }
 
         .waiting-spinner-container {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
             margin-bottom: 16px;
         }
@@ -468,11 +854,29 @@
             border-radius: 50%;
             border: 4px solid rgba(165, 180, 252, 0.3);
             border-top-color: #a5b4fc;
+            -webkit-animation: spin 1s linear infinite;
+            -moz-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
+        }
+
+        @-webkit-keyframes spin {
+            to {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+        }
+
+        @-moz-keyframes spin {
+            to {
+                -moz-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes spin {
             to {
+                -webkit-transform: rotate(360deg);
+                -moz-transform: rotate(360deg);
                 transform: rotate(360deg);
             }
         }
@@ -485,35 +889,93 @@
             letter-spacing: 0.025em;
         }
 
+        @media (min-width: 1920px) {
+            .waiting-title {
+                font-size: 24px;
+            }
+        }
+
         .waiting-dots {
             margin-top: 4px;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
-            gap: 4px;
             color: #a5b4fc;
             font-size: 20px;
         }
 
+        @media (min-width: 1920px) {
+            .waiting-dots {
+                font-size: 24px;
+            }
+        }
+
         .waiting-dots span {
+            -webkit-animation: bounce 1s infinite;
+            -moz-animation: bounce 1s infinite;
             animation: bounce 1s infinite;
+            margin: 0 2px;
         }
 
         .waiting-dots span:nth-child(2) {
+            -webkit-animation-delay: 150ms;
+            -moz-animation-delay: 150ms;
             animation-delay: 150ms;
         }
 
         .waiting-dots span:nth-child(3) {
+            -webkit-animation-delay: 300ms;
+            -moz-animation-delay: 300ms;
             animation-delay: 300ms;
+        }
+
+        @-webkit-keyframes bounce {
+
+            0%,
+            100% {
+                -webkit-transform: translateY(0);
+                transform: translateY(0);
+            }
+
+            50% {
+                -webkit-transform: translateY(-8px);
+                transform: translateY(-8px);
+            }
+        }
+
+        @-moz-keyframes bounce {
+
+            0%,
+            100% {
+                -moz-transform: translateY(0);
+                transform: translateY(0);
+            }
+
+            50% {
+                -moz-transform: translateY(-8px);
+                transform: translateY(-8px);
+            }
         }
 
         @keyframes bounce {
 
             0%,
             100% {
+                -webkit-transform: translateY(0);
+                -moz-transform: translateY(0);
                 transform: translateY(0);
             }
 
             50% {
+                -webkit-transform: translateY(-8px);
+                -moz-transform: translateY(-8px);
                 transform: translateY(-8px);
             }
         }
@@ -525,18 +987,26 @@
             color: rgba(165, 180, 252, 0.8);
         }
 
-        /* Results Display */
+        /* Results Display - TV Optimized */
         .results-container {
             position: relative;
             width: 100%;
             max-width: 448px;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        @media (min-width: 1920px) {
+            .results-container {
+                max-width: 600px;
+            }
+        }
 
-
-        .results-container:hover .results-glow {
+        .results-container:hover .results-glow,
+        .results-container:focus .results-glow {
             opacity: 0.9;
+            -webkit-filter: blur(12px);
+            -moz-filter: blur(12px);
             filter: blur(12px);
         }
 
@@ -546,14 +1016,23 @@
             border: 1px solid rgba(250, 204, 21, 0.6);
             background: rgba(0, 0, 0, 0.6);
             padding: 24px;
-            /* box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); */
-            backdrop-filter: blur(12px);
-
+            -webkit-transition: all 0.3s;
+            -moz-transition: all 0.3s;
+            transition: all 0.3s;
         }
 
-        .results-box:hover {
+        @media (min-width: 1920px) {
+            .results-box {
+                padding: 32px;
+            }
+        }
+
+        .results-box:hover,
+        .results-box:focus-within {
             border: 1px solid rgb(248, 0, 62);
-            /* box-shadow: 0px 4px 6px 2px rgb(248, 248, 248); */
+            -webkit-transform: translateY(-2px);
+            -moz-transform: translateY(-2px);
+            transform: translateY(-2px);
         }
 
         .results-title {
@@ -562,11 +1041,12 @@
             font-weight: 600;
             letter-spacing: 0.05em;
             color: #fde047;
-
         }
 
-        .results-container:hover .results-title {
-            color: #facc15;
+        @media (min-width: 1920px) {
+            .results-title {
+                font-size: 24px;
+            }
         }
 
         .results-subtitle {
@@ -574,11 +1054,6 @@
             text-align: center;
             font-size: 16px;
             color: #9ca3af;
-
-        }
-
-        .results-container:hover .results-subtitle {
-            color: #d1d5db;
         }
 
         .results-content {
@@ -601,9 +1076,15 @@
         }
 
         .results-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: space-around;
+            -ms-flex-pack: space-around;
+            justify-content: space-around;
+            flex-wrap: wrap;
         }
 
         .result-item {
@@ -611,8 +1092,21 @@
             border: 1px solid rgba(250, 204, 21, 0.3);
             background: rgba(0, 0, 0, 0.4);
             padding: 16px;
-            /* backdrop-filter: blur(4px); */
             text-align: center;
+            -webkit-box-flex: 1;
+            -moz-box-flex: 1;
+            -webkit-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            margin: 8px;
+            min-width: 100px;
+        }
+
+        @media (min-width: 1920px) {
+            .result-item {
+                padding: 24px;
+                margin: 12px;
+            }
         }
 
         .result-label {
@@ -622,29 +1116,73 @@
             margin-bottom: 8px;
         }
 
+        @media (min-width: 1920px) {
+            .result-label {
+                font-size: 72px;
+            }
+        }
+
         .result-value {
             font-size: 36px;
             font-weight: bold;
             color: #fde047;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 1920px) {
+            .result-value {
+                font-size: 48px;
+            }
         }
 
         /* Game Closed Overlay */
         .game-closed {
             min-height: 100vh;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-align: center;
+            -moz-box-align: center;
+            -ms-flex-align: center;
+            -webkit-align-items: center;
             align-items: center;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
             padding: 24px;
+        }
+
+        @media (min-width: 1920px) {
+            .game-closed {
+                padding: 48px;
+            }
         }
 
         .game-closed-content {
             text-align: center;
             max-width: 600px;
+            width: 100%;
+        }
+
+        @media (min-width: 1920px) {
+            .game-closed-content {
+                max-width: 800px;
+            }
         }
 
         .game-closed-icon {
             font-size: 96px;
             margin-bottom: 16px;
+        }
+
+        @media (min-width: 1920px) {
+            .game-closed-icon {
+                font-size: 128px;
+            }
         }
 
         .game-closed-title {
@@ -654,19 +1192,36 @@
             margin-bottom: 16px;
         }
 
+        @media (min-width: 1920px) {
+            .game-closed-title {
+                font-size: 48px;
+            }
+        }
+
         .game-closed-description {
             font-size: 20px;
             color: #d1d5db;
             margin-bottom: 32px;
         }
 
+        @media (min-width: 1920px) {
+            .game-closed-description {
+                font-size: 24px;
+            }
+        }
+
         .countdown-box {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 16px;
             padding: 24px;
-            backdrop-filter: blur(12px);
             border: 1px solid rgba(250, 204, 21, 0.3);
             margin-bottom: 32px;
+        }
+
+        @media (min-width: 1920px) {
+            .countdown-box {
+                padding: 32px;
+            }
         }
 
         .countdown-title {
@@ -675,10 +1230,34 @@
             margin-bottom: 16px;
         }
 
+        @media (min-width: 1920px) {
+            .countdown-title {
+                font-size: 24px;
+            }
+        }
+
         .countdown-grid {
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
             display: flex;
+            -webkit-box-pack: center;
+            -moz-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
             justify-content: center;
-            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .countdown-grid>*:not(:last-child) {
+            margin-right: 32px;
+        }
+
+        @media (max-width: 767px) {
+            .countdown-grid>*:not(:last-child) {
+                margin-right: 16px;
+            }
         }
 
         .countdown-item {
@@ -687,10 +1266,22 @@
             padding: 16px 24px;
         }
 
+        @media (min-width: 1920px) {
+            .countdown-item {
+                padding: 24px 32px;
+            }
+        }
+
         .countdown-value {
             font-size: 32px;
             font-weight: bold;
             color: #fde047;
+        }
+
+        @media (min-width: 1920px) {
+            .countdown-value {
+                font-size: 48px;
+            }
         }
 
         .countdown-label {
@@ -699,15 +1290,107 @@
             margin-top: 4px;
         }
 
+        @media (min-width: 1920px) {
+            .countdown-label {
+                font-size: 18px;
+            }
+        }
+
         .game-closed-footer {
             font-size: 14px;
             color: #9ca3af;
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+
+            .wheel-center-button,
+            .wheel-select,
+            .results-container {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .wheel-select {
+                padding: 8px;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .wheel-rim {
+                border: 3px solid #d97706;
+            }
+
+            .wheel-select {
+                border: 2px solid #eab308;
+            }
+
+            .timer-box,
+            .results-box {
+                border: 2px solid #facc15;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            .wheel-main {
+                transition: none !important;
+            }
+
+            .waiting-spinner,
+            .waiting-pulse,
+            .waiting-dots span {
+                animation: none !important;
+            }
+
+            .wheel-center-button:hover,
+            .wheel-center-button:focus {
+                transform: none !important;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .wheel-glow,
+            .selection-glow,
+            .waiting-pulse {
+                display: none !important;
+            }
+        }
+
+        /* IE11 specific fixes */
+        @media all and (-ms-high-contrast: none),
+        (-ms-high-contrast: active) {
+            .game-layout {
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            .wheels-grid {
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            .wheel-container {
+                flex: 0 0 auto;
+            }
+
+            .wheel-main {
+                background: #EC2721 !important;
+                /* Fallback for conic-gradient */
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="app"></div>
+    <div id="app" role="main" aria-label="Casino Spin Wheel Game"></div>
 
     <script>
         const prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -734,64 +1417,145 @@
 
         const wheelRotations = { a1: 0, a2: 0, b1: 0, b2: 0, c1: 0, c2: 0 };
 
+        // Browser detection for fallbacks
+        const isIE = /*@cc_on!@*/false || !!document.documentMode;
+        const isEdge = /Edg/.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isFirefox = typeof InstallTrigger !== 'undefined';
+
+        // Check for conic gradient support
+        const supportsConicGradient = () => {
+            const el = document.createElement('div');
+            el.style.background = 'conic-gradient(#000, #fff)';
+            return el.style.background.includes('conic-gradient');
+        };
+
         function init() {
             state.token = sessionStorage.getItem("token");
             initializeSocket();
             initialRender();
             startTimerUpdate();
+
+            // Add accessibility attributes
+            document.body.setAttribute('role', 'application');
+            document.body.setAttribute('aria-label', 'Casino Spin Wheel Game');
         }
+        console.log(state.roundTimeLeft,"roundTimeLeft")
 
         function initializeSocket() {
-            const socket = io('https://gamebackend-l3pd.onrender.com', { path: '/api/socket' });
-            state.socket = socket;
+            try {
+                // Use relative path for better compatibility
+                const socket = io('http://localhost:8000', {
+                    path: '/api/socket',
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                });
 
-            socket.on('connect', () => console.log('Connected to game server'));
+                state.socket = socket;
 
-            socket.on('game-state', (data) => {
+                socket.on('connect', () => {
+                    console.log('Connected to game server');
+                    socket.emit('client-info', {
+                        userAgent: navigator.userAgent,
+                        screenSize: `${window.innerWidth}x${window.innerHeight}`,
+                        timestamp: Date.now()
+                    });
+                });
+
+                socket.on('game-state', (data) => {
+                    state.isGameActive = data.isActive;
+                    state.gameClosed = !data.isActive;
+                    state.currentRound = data.currentRound || 1;
+                    state.roundTimeLeft = data.roundTimeLeft || 0;
+                    state.timeUntilNextGame = data.timeUntilEnd || 0;
+                    state.nextGameStart = data.nextGameStart || null;
+                    if (data.currentResults) state.results = data.currentResults;
+                    fullRender();
+                });
+
+                socket.on('game-timer', (data) => {
+                    state.roundTimeLeft = data.roundTimeLeft;
+                    state.currentRound = data.roundNumber;
+                    state.isGameActive = data.isActive;
+                    updateTimerOnly();
+                });
+
+                socket.on('round-start', (data) => {
+                    state.currentRound = data.roundNumber;
+                    state.roundTimeLeft = data.roundTimeLeft;
+                    state.spinning = true;
+                    state.isWaiting = true;
+                    state.serverWheelValues = data.wheelValues;
+                    state.results = { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null };
+
+                    const wheelKeys = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+                    if(state.roundTimeLeft >= 20){
+                    wheelKeys.forEach(key => {
+                        spinWheel(key, state.serverWheelValues[key]);
+                    });
+
+                    updateSelectorsState();
+                    announceToScreenReader("Round started! Wheels are spinning.");
+                }
+                });
+
+                socket.on('wheel-values-update', (data) => {
+                    state.serverWheelValues = data.wheelValues;
+                });
+
+                socket.on('game-closed', (data) => {
+                    state.gameClosed = true;
+                    state.isGameActive = false;
+                    state.timeUntilNextGame = data.timeUntilNextGame;
+                    state.nextGameStart = data.nextGameStart;
+                    fullRender();
+                    announceToScreenReader("Game is now closed. Come back tomorrow.");
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from game server');
+                    announceToScreenReader("Disconnected from game server. Attempting to reconnect...");
+                });
+
+                socket.on('connect_error', (error) => {
+                    console.error('Connection error:', error);
+                    announceToScreenReader("Connection error. Please check your internet connection.");
+                });
+
+            } catch (error) {
+                console.error('Socket initialization error:', error);
+                // Fallback to polling if WebSocket fails
+                startPollingFallback();
+            }
+        }
+
+        function startPollingFallback() {
+            console.log('Starting polling fallback...');
+            setInterval(() => {
+                // Simulate game state updates
+                fetchGameState();
+            }, 5000);
+        }
+
+        async function fetchGameState() {
+            try {
+                const response = await fetch('/api/game-state');
+                const data = await response.json();
+
                 state.isGameActive = data.isActive;
                 state.gameClosed = !data.isActive;
                 state.currentRound = data.currentRound || 1;
                 state.roundTimeLeft = data.roundTimeLeft || 0;
-                state.timeUntilNextGame = data.timeUntilEnd || 0;
-                state.nextGameStart = data.nextGameStart || null;
+
                 if (data.currentResults) state.results = data.currentResults;
-                fullRender();
-            });
 
-            socket.on('game-timer', (data) => {
-                state.roundTimeLeft = data.roundTimeLeft;
-                state.currentRound = data.roundNumber;
-                state.isGameActive = data.isActive;
                 updateTimerOnly();
-            });
-
-            socket.on('round-start', (data) => {
-                state.currentRound = data.roundNumber;
-                state.roundTimeLeft = data.roundTimeLeft;
-                state.spinning = true;
-                state.isWaiting = true;
-                state.serverWheelValues = data.wheelValues;
-                state.results = { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null };
-
-                const wheelKeys = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-                wheelKeys.forEach(key => {
-                    spinWheel(key, state.serverWheelValues[key]);
-                });
-
-                updateSelectorsState();
-            });
-
-            socket.on('wheel-values-update', (data) => {
-                state.serverWheelValues = data.wheelValues;
-            });
-
-            socket.on('game-closed', (data) => {
-                state.gameClosed = true;
-                state.isGameActive = false;
-                state.timeUntilNextGame = data.timeUntilNextGame;
-                state.nextGameStart = data.nextGameStart;
-                fullRender();
-            });
+                updateResultsDisplay();
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
         }
 
         function spinWheel(wheelKey, value) {
@@ -810,7 +1574,26 @@
 
             const wheelElement = document.querySelector(`[data-wheel="${wheelKey}"] .wheel-main`);
             if (wheelElement) {
-                wheelElement.style.transform = `rotate(${wheelRotations[wheelKey]}deg)`;
+                // Use requestAnimationFrame for smoother animation
+                const startTime = Date.now();
+                const duration = 7000;
+
+                const animate = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Easing function for smooth deceleration
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    const currentRotation = easeOut * wheelRotations[wheelKey];
+
+                    wheelElement.style.transform = `rotate(${currentRotation}deg)`;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+
+                requestAnimationFrame(animate);
             }
 
             setTimeout(() => {
@@ -823,11 +1606,17 @@
                     state.isWaiting = false;
                     updateResultsDisplay();
                     updateSelectorsState();
+                    announceToScreenReader("All wheels have stopped. Check your results!");
                 }
             }, 7000);
         }
 
         function createWheelBackground() {
+            if (!supportsConicGradient() || isIE) {
+                // Fallback for browsers that don't support conic-gradient
+                return `linear-gradient(45deg, ${colors.join(', ')})`;
+            }
+
             const sliceAngle = 360 / prizes.length;
             let gradient = "conic-gradient(";
             prizes.forEach((_, i) => {
@@ -843,20 +1632,21 @@
             const background = createWheelBackground();
 
             return `
-                <div class="wheel-container" data-wheel="${wheelKey}">
-                    <div class="wheel-glow"></div>
-                    <div class="wheel-rim"></div>
-                    <div class="wheel-arrow"></div>
-                    <div class="wheel-main" style="background: ${background}; transform: rotate(${wheelRotations[wheelKey]}deg);">
+                <div class="wheel-container" data-wheel="${wheelKey}" role="group" aria-label="Wheel ${wheelKey.toUpperCase()}">
+                    <div class="wheel-glow" aria-hidden="true"></div>
+                    <div class="wheel-rim" aria-hidden="true"></div>
+                    <div class="wheel-arrow" aria-hidden="true"></div>
+                    <div class="wheel-main" style="background: ${background}; transform: rotate(${wheelRotations[wheelKey]}deg);" 
+                         aria-live="polite" aria-atomic="true">
                         ${prizes.map((p, i) => `
-                            <div class="wheel-number" style="transform: rotate(${i * sliceAngle + sliceAngle / 2}deg);">
+                            <div class="wheel-number" style="transform: rotate(${i * sliceAngle + sliceAngle / 2}deg);" aria-hidden="true">
                                 <span>${p}</span>
                             </div>
                         `).join('')}
-                        <div class="wheel-shine"></div>
+                        <div class="wheel-shine" aria-hidden="true"></div>
                     </div>
-                    <button class="wheel-center-button">
-                        <span class="wheel-center-shine"></span>
+                    <button class="wheel-center-button" aria-label="Spin wheel ${wheelKey.toUpperCase()}">
+                        <span class="wheel-center-shine" aria-hidden="true"></span>
                     </button>
                 </div>
             `;
@@ -866,30 +1656,33 @@
             const showSelections = state.token !== null;
 
             return `
-                <div class="wheel-section">
+                <section class="wheel-section" role="region" aria-label="Wheel Section ${label}">
                     <span class="wheel-label">${label}</span>
                     <div class="wheels-grid">
                         ${createWheel(wheel1Key)}
                         ${createWheel(wheel2Key)}
-                        ${showSelections ? `
+                       
                             <div class="selection-container">
-                                <div class="selection-box">
-                                    <div class="selection-glow"></div>
+                                <div class="selection-box" role="group" aria-label="Selection for ${label} wheels">
+                                    <div class="selection-glow" aria-hidden="true"></div>
                                     <div class="selection-inputs">
-                                        <select class="wheel-select" data-select="${wheel1Key}" ${state.spinning ? 'disabled' : ''}>
+                                        <select class="wheel-select" data-select="${wheel1Key}" 
+                                                ${state.spinning ? 'disabled' : ''}
+                                                aria-label="Select number for ${label} wheel 1">
                                             <option value="">X</option>
                                             ${prizes.map(d => `<option value="${d}" ${state.userSelections[wheel1Key] === parseInt(d) ? 'selected' : ''}>${d}</option>`).join('')}
                                         </select>
-                                        <select class="wheel-select" data-select="${wheel2Key}" ${state.spinning ? 'disabled' : ''}>
+                                        <select class="wheel-select" data-select="${wheel2Key}" 
+                                                ${state.spinning ? 'disabled' : ''}
+                                                aria-label="Select number for ${label} wheel 2">
                                             <option value="">X</option>
                                             ${prizes.map(d => `<option value="${d}" ${state.userSelections[wheel2Key] === parseInt(d) ? 'selected' : ''}>${d}</option>`).join('')}
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                        ` : ''}
                     </div>
-                </div>
+                </section>
             `;
         }
 
@@ -897,6 +1690,10 @@
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             return { minutes, seconds };
+        }
+
+        function formatTimeNumber(num) {
+            return num < 10 ? `0${num}` : num;
         }
 
         function initialRender() {
@@ -913,6 +1710,7 @@
 
             renderGameActive(app);
             attachEventListeners();
+            setupAccessibility();
         }
 
         function renderGameClosed(app) {
@@ -925,9 +1723,9 @@
             const seconds = state.timeUntilNextGame % 60;
 
             app.innerHTML = `
-                <div class="game-closed">
+                <div class="game-closed" role="alert" aria-live="assertive">
                     <div class="game-closed-content">
-                        <div class="game-closed-icon">🌙</div>
+                        <div class="game-closed-icon" aria-hidden="true">🌙</div>
                         <h1 class="game-closed-title">Game Closed</h1>
                         <p class="game-closed-description">The game is currently closed. Next game starts tomorrow at ${nextGameTime}.</p>
                         
@@ -935,15 +1733,15 @@
                             <p class="countdown-title">Next Game Countdown</p>
                             <div class="countdown-grid">
                                 <div class="countdown-item">
-                                    <p class="countdown-value" id="closed-hours">${hours}</p>
+                                    <p class="countdown-value" id="closed-hours">${formatTimeNumber(hours)}</p>
                                     <p class="countdown-label">Hours</p>
                                 </div>
                                 <div class="countdown-item">
-                                    <p class="countdown-value" id="closed-minutes">${minutes}</p>
+                                    <p class="countdown-value" id="closed-minutes">${formatTimeNumber(minutes)}</p>
                                     <p class="countdown-label">Minutes</p>
                                 </div>
                                 <div class="countdown-item">
-                                    <p class="countdown-value" id="closed-seconds">${seconds}</p>
+                                    <p class="countdown-value" id="closed-seconds">${formatTimeNumber(seconds)}</p>
                                     <p class="countdown-label">Seconds</p>
                                 </div>
                             </div>
@@ -981,17 +1779,17 @@
                                 <p class="timer-title">Results On Time</p>
                                 <div class="timer-grid">
                                     <div class="timer-item">
-                                        <p class="timer-value" id="timer-minutes">${minutes}</p>
+                                        <p class="timer-value" id="timer-minutes">${formatTimeNumber(minutes)}</p>
                                         <p class="timer-label">Minute</p>
                                     </div>
                                     <div class="timer-item">
-                                        <p class="timer-value" id="timer-seconds">${seconds}</p>
+                                        <p class="timer-value" id="timer-seconds">${formatTimeNumber(seconds)}</p>
                                         <p class="timer-label">Second</p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="results-container" onclick="window.location.href='/history'">
+                            <div class="results-container" onclick="window.location.href='/history'" role="button" tabindex="0" aria-label="View game history">
                                 <div class="results-box">
                                     <p class="results-title">Result</p>
                                     <p class="results-subtitle">Old Result Click here</p>
@@ -1004,7 +1802,7 @@
                 const val1 = state.results[key1] !== null ? state.results[key1] : '—';
                 const val2 = state.results[key2] !== null ? state.results[key2] : '—';
                 return `
-                                                    <div class="result-item">
+                                                    <div class="result-item" role="status" aria-label="${label} result: ${val1}${val2}">
                                                         <div class="result-label">${label}</div>
                                                         <div class="result-value">${val1}${val2}</div>
                                                     </div>
@@ -1020,15 +1818,14 @@
             `;
         }
 
-        // Update only timer values without re-rendering entire DOM
         function updateTimerOnly() {
             const minutesEl = document.getElementById('timer-minutes');
             const secondsEl = document.getElementById('timer-seconds');
 
             if (minutesEl && secondsEl) {
                 const { minutes, seconds } = getMinutesAndSeconds(state.isGameActive ? state.roundTimeLeft : state.timeUntilNextGame);
-                minutesEl.textContent = minutes;
-                secondsEl.textContent = seconds;
+                minutesEl.textContent = formatTimeNumber(minutes);
+                secondsEl.textContent = formatTimeNumber(seconds);
             }
 
             // Update closed game countdown if visible
@@ -1041,13 +1838,12 @@
                 const minutes = Math.floor((state.timeUntilNextGame % 3600) / 60);
                 const seconds = state.timeUntilNextGame % 60;
 
-                closedHours.textContent = hours;
-                closedMinutes.textContent = minutes;
-                closedSeconds.textContent = seconds;
+                closedHours.textContent = formatTimeNumber(hours);
+                closedMinutes.textContent = formatTimeNumber(minutes);
+                closedSeconds.textContent = formatTimeNumber(seconds);
             }
         }
 
-        // Update only results display without re-rendering wheels
         function updateResultsDisplay() {
             const resultsGrid = document.getElementById('results-grid');
 
@@ -1058,7 +1854,7 @@
                     const val1 = state.results[key1] !== null ? state.results[key1] : '—';
                     const val2 = state.results[key2] !== null ? state.results[key2] : '—';
                     return `
-                        <div class="result-item">
+                        <div class="result-item" role="status" aria-label="${label} result: ${val1}${val2}">
                             <div class="result-label">${label}</div>
                             <div class="result-value">${val1}${val2}</div>
                         </div>
@@ -1067,23 +1863,30 @@
             }
         }
 
-        // Update selector disabled state without full re-render
         function updateSelectorsState() {
             document.querySelectorAll('.wheel-select').forEach(select => {
                 if (state.spinning) {
                     select.disabled = true;
+                    select.setAttribute('aria-disabled', 'true');
                 } else {
                     select.disabled = false;
+                    select.setAttribute('aria-disabled', 'false');
                 }
             });
         }
 
-        // Start timer update interval
         function startTimerUpdate() {
             setInterval(() => {
                 if (state.isGameActive && state.roundTimeLeft > 0) {
                     state.roundTimeLeft--;
                     updateTimerOnly();
+
+                    // Announce time updates for screen readers
+                    if (state.roundTimeLeft % 30 === 0) {
+                        const minutes = Math.floor(state.roundTimeLeft / 60);
+                        const seconds = state.roundTimeLeft % 60;
+                        announceToScreenReader(`${minutes} minutes and ${seconds} seconds remaining in current round.`);
+                    }
                 } else if (state.gameClosed && state.timeUntilNextGame > 0) {
                     state.timeUntilNextGame--;
                     updateTimerOnly();
@@ -1091,8 +1894,8 @@
             }, 1000);
         }
 
-        // Attach event listeners for user interactions
         function attachEventListeners() {
+            // Selection dropdowns
             document.querySelectorAll('[data-select]').forEach(select => {
                 select.addEventListener('change', (e) => {
                     const wheelKey = e.target.getAttribute('data-select');
@@ -1105,12 +1908,140 @@
                             timestamp: Date.now()
                         });
                     }
+
+                    announceToScreenReader(`Selected ${value || 'nothing'} for wheel ${wheelKey.toUpperCase()}`);
+                });
+
+                // Add keyboard support for better accessibility
+                select.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.target.click();
+                    }
+                });
+            });
+
+            // Center buttons
+            document.querySelectorAll('.wheel-center-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const wheelContainer = e.target.closest('.wheel-container');
+                    const wheelKey = wheelContainer.getAttribute('data-wheel');
+
+                    if (!state.spinning) {
+                        // Simulate spin for this wheel
+                        const randomValue = Math.floor(Math.random() * prizes.length);
+                        spinWheel(wheelKey, randomValue);
+                        announceToScreenReader(`Manually spinning wheel ${wheelKey.toUpperCase()}`);
+                    }
+                });
+            });
+
+            // Results container keyboard support
+            const resultsContainer = document.querySelector('.results-container');
+            if (resultsContainer) {
+                resultsContainer.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        window.location.href = '/history';
+                    }
+                });
+            }
+
+            // Add touch event support
+            document.querySelectorAll('.wheel-center-button').forEach(button => {
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    button.style.transform = 'scale(0.95)';
+                });
+
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    button.style.transform = '';
+                    button.click();
                 });
             });
         }
 
-        // Start app
-        init();
+        function setupAccessibility() {
+            // Add skip to content link
+            const skipLink = document.createElement('a');
+            skipLink.href = '#main-content';
+            skipLink.className = 'skip-to-content';
+            skipLink.innerHTML = 'Skip to main content';
+            skipLink.style.cssText = 'position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 10000;';
+            skipLink.addEventListener('focus', function () {
+                this.style.top = '0';
+            });
+            skipLink.addEventListener('blur', function () {
+                this.style.top = '-40px';
+            });
+
+            document.body.insertBefore(skipLink, document.body.firstChild);
+
+            // Add main content anchor
+            const app = document.getElementById('app');
+            app.id = 'main-content';
+            app.setAttribute('tabindex', '-1');
+        }
+
+        function announceToScreenReader(message) {
+            // Create aria-live region for screen reader announcements
+            let liveRegion = document.getElementById('sr-announcements');
+            if (!liveRegion) {
+                liveRegion = document.createElement('div');
+                liveRegion.id = 'sr-announcements';
+                liveRegion.setAttribute('aria-live', 'polite');
+                liveRegion.setAttribute('aria-atomic', 'true');
+                liveRegion.style.cssText = 'position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;';
+                document.body.appendChild(liveRegion);
+            }
+
+            liveRegion.textContent = message;
+
+            // Clear message after a delay
+            setTimeout(() => {
+                liveRegion.textContent = '';
+            }, 3000);
+        }
+
+        // Handle browser resize for TV/LED optimization
+        function handleResize() {
+            const isLargeScreen = window.innerWidth >= 1920;
+            const isExtraLargeScreen = window.innerWidth >= 2560;
+
+            if (isLargeScreen || isExtraLargeScreen) {
+                document.body.classList.add('large-screen');
+                if (isExtraLargeScreen) {
+                    document.body.classList.add('extra-large-screen');
+                } else {
+                    document.body.classList.remove('extra-large-screen');
+                }
+            } else {
+                document.body.classList.remove('large-screen', 'extra-large-screen');
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
+        // Initialize resize handler
+        handleResize();
+
+        // Error handling
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+            announceToScreenReader('An error occurred. Please refresh the page.');
+        });
+
+        // Offline/online handling
+        window.addEventListener('offline', () => {
+            announceToScreenReader('You are offline. Some features may not work.');
+        });
+
+        window.addEventListener('online', () => {
+            announceToScreenReader('You are back online.');
+        });
     </script>
 </body>
 
