@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,571 +14,1104 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #040761 0%, #02006d 50%, #0e156b 100%);
+            color: white;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .game-screen {
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .game-container {
-            max-width: 1400px;
+        .container {
+            /* max-width: ; */
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 30px;
+            padding: 24px;
         }
 
-        .left-panel {
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            /* gap: 48px; */
+            /* padding-top: 40px; */
+        }
+
+        @media (min-width: 768px) {
+            .game-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Wheel Sections */
+        .wheels-container {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 20px;
         }
 
-        .wheel-wrapper {
+        .wheel-section {
+            position: relative;
+            border-radius: 16px;
+            border: 1px solid rgba(99, 102, 241, 0.4);
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* backdrop-filter: blur(12px); */
+            /* padding: 24px; */
+            /* box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); */
         }
 
-        .wheel-title {
-            display: block;
-            font-size: 28px;
+        .wheel-label {
+            position: absolute;
+            top: -16px;
+            left: 45%;
+            padding: 4px 16px;
+            border-radius: 9999px;
+            background: #e0e7ff;
+            color: black;
             font-weight: bold;
-            color: #ffd700;
-            text-align: center;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            font-size: 18px;
+            letter-spacing: 0.05em;
         }
 
-        .wheel-grid {
+        .wheels-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            align-items: center;
+            gap: 160px;
+            place-items: center;
+            position: relative;
         }
 
-        .wheel-canvas {
-            width: 100%;
-            aspect-ratio: 1;
-            max-width: 200px;
-            margin: 0 auto;
+        /* Spin Wheel Component */
+        .wheel-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 8px;
         }
 
-        .wheel-select-container {
-            grid-column: 1 / -1;
+        @media (min-width: 768px) {
+            .wheel-container {
+                width: 180px;
+                height: 180px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .wheel-container {
+                width: 280px;
+                height: 280px;
+            }
+        }
+
+        .wheel-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #facc15, #ec4899, #a855f7);
+            filter: blur(16px);
+            /* opacity: 0.4; */
+        }
+
+        .wheel-rim {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: #fbbf24;
+            /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9); */
+        }
+
+        .wheel-arrow {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%) rotate(60deg);
+            z-index: 50;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 18px solid #FFD700;
+            /* filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.9)); */
+        }
+
+        @media (max-width: 767px) {
+            .wheel-arrow {
+                top: -16px;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-bottom: 12px solid #FFD700;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .wheel-arrow {
+                top: -4px;
+            }
+        }
+
+        .wheel-main {
+            position: absolute;
+            inset: 12px;
+            border-radius: 50%;
+            transition: transform 7s ease-out;
+            /* box-shadow: inset 0 10px 18px rgba(255, 255, 255, 0.25),
+                inset 0 -14px 22px rgba(0, 0, 0, 0.9); */
+        }
+
+        @media (min-width: 768px) {
+            .wheel-main {
+                inset: 10px;
+            }
+        }
+
+        .wheel-number {
+            position: absolute;
+            inset: 0;
             display: flex;
-            gap: 20px;
             justify-content: center;
-            margin-top: 10px;
         }
 
-        .select-box {
-            padding: 12px 20px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: 2px solid #ffd700;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
+        .wheel-number span {
+            margin-top: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            /* filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.6)); */
+            transform: rotate(103deg);
+        }
+
+        @media (min-width: 768px) {
+            .wheel-number span {
+                margin-top: 16px;
+                font-size: 14px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .wheel-number span {
+                margin-top: 20px;
+                font-size: 24px;
+            }
+        }
+
+        .wheel-shine {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            /* background: radial-gradient(circle at top, rgba(255, 255, 255, 0.35), transparent 60%); */
+            pointer-events: none;
+        }
+
+        .wheel-center-button {
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            z-index: 50;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fef3c7, #fbbf24, #d97706);
+            border: 1px solid rgba(253, 224, 71, 0.8);
+            /* backdrop-filter: blur(12px); */
             transition: all 0.3s;
+            cursor: pointer;
         }
 
-        .select-box:hover:not(:disabled) {
-            background: rgba(255, 215, 0, 0.2);
-            transform: translateY(-2px);
+        @media (min-width: 768px) {
+            .wheel-center-button {
+                width: 64px;
+                height: 64px;
+            }
         }
 
-        .select-box:disabled {
+        /* .wheel-center-button:hover {
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+        } */
+
+        /* .wheel-center-button:active {
+            transform: scale(0.95);
+        } */
+
+        .wheel-center-shine {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            /* background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1), transparent); */
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Selection Dropdown */
+        .selection-container {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+        }
+
+        .selection-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            /* backdrop-filter: blur(12px); */
+            border: 1px solid rgba(250, 204, 21, 0.5);
+            padding: 4px 4px;
+            /* box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8); */
+        }
+
+        @media (min-width: 640px) {
+            .selection-box {
+                padding: 8px 12px;
+            }
+        }
+
+        .selection-glow {
+            position: absolute;
+            inset: -2px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #facc15, #fde047, #facc15);
+            /* opacity: 0.3; */
+            filter: blur(4px);
+        }
+
+        .selection-inputs {
+            display: flex;
+            gap: 4px;
+            z-index: 20;
+        }
+
+        .wheel-select {
+            width: 20px;
+            height: 24px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #fde047;
+            background: linear-gradient(180deg, #000, #18181b);
+            border-radius: 6px;
+            border: 1px solid rgba(234, 179, 8, 0.7);
+            /* box-shadow: inset 0 0 8px rgba(255, 215, 0, 0.3); */
+            cursor: pointer;
+        }
+
+        @media (min-width: 640px) {
+            .wheel-select {
+                width: 24px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .wheel-select {
+                width: 44px;
+                height: 56px;
+                font-size: 20px;
+            }
+        }
+
+        .wheel-select:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .right-panel {
+        .wheel-select option {
+            background: rgb(199, 170, 5);
+            color: #000000;
+        }
+
+        /* Info Panel */
+        .info-panel {
             display: flex;
             flex-direction: column;
-            gap: 20px;
-        }
-
-        .time-range-box,
-        .timer-box,
-        .result-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .time-range-title,
-        .result-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffd700;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            margin-bottom: 15px;
+            gap: 32px;
         }
 
-        .time-range {
+        .game-timing {
+            width: 100%;
+            max-width: 448px;
+            border-radius: 16px;
+            border: 1px solid rgba(251, 113, 133, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+            /* backdrop-filter: blur(12px); */
+            padding: 16px 24px;
+            /* box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); */
+        }
+
+        .game-timing-label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            color: #fb7185;
+            margin-bottom: 8px;
+        }
+
+        .timing-display {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            font-size: 24px;
-            color: white;
+            gap: 12px;
         }
 
-        .to {
-            color: #ffd700;
+        .time-badge {
+            padding: 4px 16px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            color: #fde047;
             font-weight: bold;
+            font-size: 14px;
         }
 
-        .timer-heading {
+        .time-separator {
+            color: #d1d5db;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Timer Box */
+        .timer-box {
+            width: 100%;
+            max-width: 448px;
+            border-radius: 16px;
+            border: 1px solid rgba(250, 204, 21, 0.7);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .timer-title {
+            font-size: 18px;
+            font-weight: 600;
             margin-bottom: 20px;
+            letter-spacing: 0.025em;
         }
 
         .timer-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 16px;
         }
 
-        .timer-card {
-            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        .timer-item {
             border-radius: 12px;
-            padding: 30px 20px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+            background: linear-gradient(135deg, rgba(67, 56, 202, 0.5), rgba(49, 46, 129, 0.5));
+            padding: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
-        .timer-card p {
-            font-size: 48px;
+        .timer-value {
+            font-size: 36px;
             font-weight: bold;
-            color: #1a1a2e;
-            margin-bottom: 5px;
+            color: #fde047;
         }
 
-        .timer-card span {
-            font-size: 14px;
-            color: #333;
+        .timer-label {
+            font-size: 12px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #d1d5db;
+            margin-top: 4px;
+        }
+
+        /* Waiting State */
+        .waiting-container {
+            display: grid;
+            place-items: center;
         }
 
         .waiting-box {
-            text-align: center;
-            padding: 40px;
+            position: relative;
+            width: 100%;
+            max-width: 384px;
+            overflow: hidden;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(67, 56, 202, 0.4), rgba(55, 48, 163, 0.4), rgba(49, 46, 129, 0.5));
+            padding: 24px;
+            /* box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px); */
+            border: 1px solid rgba(129, 140, 248, 0.3);
         }
 
-        .spinner-circle {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 215, 0, 0.3);
-            border-top-color: #ffd700;
+        .waiting-pulse {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            background: rgba(99, 102, 241, 0.1);
+            filter: blur(32px);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .waiting-spinner-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .waiting-spinner {
+            height: 56px;
+            width: 56px;
             border-radius: 50%;
-            margin: 0 auto 20px;
+            border: 4px solid rgba(165, 180, 252, 0.3);
+            border-top-color: #a5b4fc;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
-        .waiting-box p {
-            color: white;
-            font-size: 18px;
-        }
-
-        .result-box {
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .result-box:hover {
-            transform: translateY(-5px);
-        }
-
-        .result-sub {
+        .waiting-title {
             text-align: center;
-            color: #aaa;
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #e0e7ff;
+            letter-spacing: 0.025em;
         }
 
-        .result-grid {
+        .waiting-dots {
+            margin-top: 4px;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            color: #a5b4fc;
+            font-size: 20px;
+        }
+
+        .waiting-dots span {
+            animation: bounce 1s infinite;
+        }
+
+        .waiting-dots span:nth-child(2) {
+            animation-delay: 150ms;
+        }
+
+        .waiting-dots span:nth-child(3) {
+            animation-delay: 300ms;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .waiting-subtitle {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(165, 180, 252, 0.8);
+        }
+
+        /* Results Display */
+        .results-container {
+            position: relative;
+            width: 100%;
+            max-width: 448px;
+            cursor: pointer;
+        }
+
+
+
+        .results-container:hover .results-glow {
+            opacity: 0.9;
+            filter: blur(12px);
+        }
+
+        .results-box {
+            position: relative;
+            border-radius: 16px;
+            border: 1px solid rgba(250, 204, 21, 0.6);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 24px;
+            /* box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); */
+            backdrop-filter: blur(12px);
+
+        }
+
+        .results-box:hover {
+            border: 1px solid rgb(248, 0, 62);
+            /* box-shadow: 0px 4px 6px 2px rgb(248, 248, 248); */
+        }
+
+        .results-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: #fde047;
+
+        }
+
+        .results-container:hover .results-title {
+            color: #facc15;
+        }
+
+        .results-subtitle {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 16px;
+            color: #9ca3af;
+
+        }
+
+        .results-container:hover .results-subtitle {
+            color: #d1d5db;
+        }
+
+        .results-content {
+            margin-top: 24px;
+        }
+
+        .results-waiting {
+            text-align: center;
+            padding: 32px 0;
+        }
+
+        .results-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .results-waiting-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .results-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 16px;
         }
 
-        .result-card {
-            background: linear-gradient(135deg, #2a2a4e 0%, #1a1a3e 100%);
-            border-radius: 10px;
-            padding: 20px;
+        .result-item {
+            border-radius: 12px;
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px;
+            /* backdrop-filter: blur(4px); */
             text-align: center;
-            border: 2px solid #ffd700;
         }
 
         .result-label {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffd700;
-            margin-bottom: 10px;
+            font-size: 56px;
+            font-weight: 600;
+            color: #f3f4f6;
+            margin-bottom: 8px;
         }
 
         .result-value {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
-            color: white;
+            color: #fde047;
         }
 
-        @media (max-width: 1024px) {
-            .game-container {
-                grid-template-columns: 1fr;
-            }
+        /* Game Closed Overlay */
+        .game-closed {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .game-closed-content {
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .game-closed-icon {
+            font-size: 96px;
+            margin-bottom: 16px;
+        }
+
+        .game-closed-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fde047;
+            margin-bottom: 16px;
+        }
+
+        .game-closed-description {
+            font-size: 20px;
+            color: #d1d5db;
+            margin-bottom: 32px;
+        }
+
+        .countdown-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            margin-bottom: 32px;
+        }
+
+        .countdown-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .countdown-grid {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+        }
+
+        .countdown-item {
+            background: rgba(67, 56, 202, 0.5);
+            border-radius: 12px;
+            padding: 16px 24px;
+        }
+
+        .countdown-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #fde047;
+        }
+
+        .countdown-label {
+            font-size: 14px;
+            color: #d1d5db;
+            margin-top: 4px;
+        }
+
+        .game-closed-footer {
+            font-size: 14px;
+            color: #9ca3af;
         }
     </style>
 </head>
+
 <body>
-    <section class="game-screen">
-        <div class="game-container">
-            <!-- LEFT PANEL -->
-            <div class="left-panel">
-                <div class="wheel-wrapper">
-                    <span class="wheel-title">A</span>
-                    <div class="wheel-grid">
-                        <canvas class="wheel-canvas" id="wheel-a1"></canvas>
-                        <canvas class="wheel-canvas" id="wheel-a2"></canvas>
-                        <div class="wheel-select-container">
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="wheel-wrapper">
-                    <span class="wheel-title">B</span>
-                    <div class="wheel-grid">
-                        <canvas class="wheel-canvas" id="wheel-b1"></canvas>
-                        <canvas class="wheel-canvas" id="wheel-b2"></canvas>
-                        <div class="wheel-select-container">
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="wheel-wrapper">
-                    <span class="wheel-title">C</span>
-                    <div class="wheel-grid">
-                        <canvas class="wheel-canvas" id="wheel-c1"></canvas>
-                        <canvas class="wheel-canvas" id="wheel-c2"></canvas>
-                        <div class="wheel-select-container">
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                            <select class="select-box">
-                                <option value="">X</option>
-                                <option>0</option><option>1</option><option>2</option>
-                                <option>3</option><option>4</option><option>5</option>
-                                <option>6</option><option>7</option><option>8</option>
-                                <option>9</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT PANEL -->
-            <div class="right-panel">
-                <div class="time-range-box">
-                    <p class="time-range-title">GAME RESULT TIMING</p>
-                    <div class="time-range">
-                        <span>09:00 AM</span>
-                        <span class="to">TO</span>
-                        <span>09:00 PM</span>
-                    </div>
-                </div>
-
-                <div class="timer-box">
-                    <p class="timer-heading result-title">Results On Time</p>
-                    <div class="timer-grid" id="timer-display">
-                        <div class="timer-card">
-                            <p id="minutes">15</p>
-                            <span>Minute</span>
-                        </div>
-                        <div class="timer-card">
-                            <p id="seconds">0</p>
-                            <span>Second</span>
-                        </div>
-                    </div>
-                    <div class="waiting-box" id="waiting-display" style="display: none;">
-                        <div class="spinner-circle"></div>
-                        <p>Please wait...</p>
-                    </div>
-                </div>
-
-                <div class="result-box" onclick="window.location.href='/history'">
-                    <p class="result-title">Result</p>
-                    <p class="result-sub">Old Result Click here</p>
-                    <div class="result-grid">
-                        <div class="result-card">
-                            <div class="result-label">A</div>
-                            <div class="result-value" id="result-a">——</div>
-                        </div>
-                        <div class="result-card">
-                            <div class="result-label">B</div>
-                            <div class="result-value" id="result-b">——</div>
-                        </div>
-                        <div class="result-card">
-                            <div class="result-label">C</div>
-                            <div class="result-value" id="result-c">——</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <div id="app"></div>
 
     <script>
-        // Wheel Drawing Class
-        class SpinWheel {
-            constructor(canvasId) {
-                this.canvas = document.getElementById(canvasId);
-                this.ctx = this.canvas.getContext('2d');
-                this.rotation = 0;
-                this.isSpinning = false;
-                this.targetValue = null;
-                this.digits = [0,1,2,3,4,5,6,7,8,9];
-                
-                this.resize();
-                this.draw();
-            }
+        const prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        const colors = [
+            "#EC2721", "#008200", "#EC2721", "#008200", "#EC2721",
+            "#008200", "#EC2721", "#ff4c4c", "#444C38", "#16a34a"
+        ];
 
-            resize() {
-                const size = this.canvas.offsetWidth;
-                this.canvas.width = size;
-                this.canvas.height = size;
-                this.centerX = size / 2;
-                this.centerY = size / 2;
-                this.radius = size * 0.4;
-            }
-
-            draw() {
-                const ctx = this.ctx;
-                const { centerX, centerY, radius } = this;
-                
-                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw outer circle
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.strokeStyle = '#ffd700';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-                
-                // Draw segments
-                const segmentAngle = (Math.PI * 2) / this.digits.length;
-                
-                for (let i = 0; i < this.digits.length; i++) {
-                    const startAngle = i * segmentAngle + this.rotation;
-                    const endAngle = startAngle + segmentAngle;
-                    
-                    // Segment background
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius - 4, startAngle, endAngle);
-                    ctx.lineTo(centerX, centerY);
-                    ctx.fillStyle = i % 2 === 0 ? '#2a2a4e' : '#1a1a3e';
-                    ctx.fill();
-                    
-                    // Draw number
-                    ctx.save();
-                    ctx.translate(centerX, centerY);
-                    ctx.rotate(startAngle + segmentAngle / 2);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#ffd700';
-                    ctx.font = 'bold 24px Arial';
-                    ctx.fillText(this.digits[i], radius * 0.7, 0);
-                    ctx.restore();
-                }
-                
-                // Center circle
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffd700';
-                ctx.fill();
-                
-                // Pointer
-                ctx.beginPath();
-                ctx.moveTo(centerX + radius + 10, centerY);
-                ctx.lineTo(centerX + radius - 10, centerY - 10);
-                ctx.lineTo(centerX + radius - 10, centerY + 10);
-                ctx.closePath();
-                ctx.fillStyle = '#ff0000';
-                ctx.fill();
-            }
-
-            spin(targetValue) {
-                if (this.isSpinning) return;
-                
-                this.isSpinning = true;
-                this.targetValue = targetValue;
-                
-                const targetIndex = this.digits.indexOf(targetValue);
-                const segmentAngle = (Math.PI * 2) / this.digits.length;
-                const targetRotation = -(targetIndex * segmentAngle) + (Math.PI * 8);
-                
-                const duration = 3000;
-                const startTime = Date.now();
-                const startRotation = this.rotation;
-                
-                const animate = () => {
-                    const elapsed = Date.now() - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    
-                    // Easing function
-                    const easeOut = 1 - Math.pow(1 - progress, 3);
-                    
-                    this.rotation = startRotation + (targetRotation - startRotation) * easeOut;
-                    this.draw();
-                    
-                    if (progress < 1) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        this.isSpinning = false;
-                    }
-                };
-                
-                animate();
-            }
-        }
-
-        // Initialize wheels
-        const wheels = {
-            a1: new SpinWheel('wheel-a1'),
-            a2: new SpinWheel('wheel-a2'),
-            b1: new SpinWheel('wheel-b1'),
-            b2: new SpinWheel('wheel-b2'),
-            c1: new SpinWheel('wheel-c1'),
-            c2: new SpinWheel('wheel-c2')
+        let state = {
+            spinning: false,
+            isWaiting: false,
+            gameClosed: false,
+            isGameActive: false,
+            currentRound: 1,
+            roundTimeLeft: 0,
+            timeUntilNextGame: 0,
+            nextGameStart: null,
+            token: null,
+            socket: null,
+            results: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
+            serverWheelValues: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
+            userSelections: { a1: undefined, a2: undefined, b1: undefined, b2: undefined, c1: undefined, c2: undefined }
         };
 
-        // Game state
-        let roundTimeLeft = 15 * 60;
-        let results = { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null };
-        let socket = null;
+        const wheelRotations = { a1: 0, a2: 0, b1: 0, b2: 0, c1: 0, c2: 0 };
 
-        // Timer update
-        function updateTimer() {
-            const minutes = Math.floor(roundTimeLeft / 60);
-            const seconds = roundTimeLeft % 60;
-            
-            document.getElementById('minutes').textContent = minutes;
-            document.getElementById('seconds').textContent = seconds;
-            
-            if (roundTimeLeft > 0) {
-                roundTimeLeft--;
+        function init() {
+            state.token = sessionStorage.getItem("token");
+            initializeSocket();
+            initialRender();
+            startTimerUpdate();
+        }
+
+        function initializeSocket() {
+            const socket = io('https://gamebackend-l3pd.onrender.com', { path: '/api/socket' });
+            state.socket = socket;
+
+            socket.on('connect', () => console.log('Connected to game server'));
+
+            socket.on('game-state', (data) => {
+                state.isGameActive = data.isActive;
+                state.gameClosed = !data.isActive;
+                state.currentRound = data.currentRound || 1;
+                state.roundTimeLeft = data.roundTimeLeft || 0;
+                state.timeUntilNextGame = data.timeUntilEnd || 0;
+                state.nextGameStart = data.nextGameStart || null;
+                if (data.currentResults) state.results = data.currentResults;
+                fullRender();
+            });
+
+            socket.on('game-timer', (data) => {
+                state.roundTimeLeft = data.roundTimeLeft;
+                state.currentRound = data.roundNumber;
+                state.isGameActive = data.isActive;
+                updateTimerOnly();
+            });
+
+            socket.on('round-start', (data) => {
+                state.currentRound = data.roundNumber;
+                state.roundTimeLeft = data.roundTimeLeft;
+                state.spinning = true;
+                state.isWaiting = true;
+                state.serverWheelValues = data.wheelValues;
+                state.results = { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null };
+
+                const wheelKeys = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+                wheelKeys.forEach(key => {
+                    spinWheel(key, state.serverWheelValues[key]);
+                });
+
+                updateSelectorsState();
+            });
+
+            socket.on('wheel-values-update', (data) => {
+                state.serverWheelValues = data.wheelValues;
+            });
+
+            socket.on('game-closed', (data) => {
+                state.gameClosed = true;
+                state.isGameActive = false;
+                state.timeUntilNextGame = data.timeUntilNextGame;
+                state.nextGameStart = data.nextGameStart;
+                fullRender();
+            });
+        }
+
+        function spinWheel(wheelKey, value) {
+            console.log('Spinning wheel:', wheelKey, 'Value:', value);
+            const hasInput = typeof value === "number" && value >= 0 && value < prizes.length;
+            const selectedIndex = hasInput ? value : Math.floor(Math.random() * prizes.length);
+
+            const sliceAngle = 360 / prizes.length;
+            const randomRounds = Math.floor(Math.random() * 6) + 10;
+            const fullRotation = randomRounds * 360;
+            const sliceCenter = selectedIndex * sliceAngle + sliceAngle / 2;
+
+            const currentAngle = wheelRotations[wheelKey] % 360;
+            const targetAngle = 360 - sliceCenter - 110;
+            wheelRotations[wheelKey] += fullRotation + (targetAngle - currentAngle);
+
+            const wheelElement = document.querySelector(`[data-wheel="${wheelKey}"] .wheel-main`);
+            if (wheelElement) {
+                wheelElement.style.transform = `rotate(${wheelRotations[wheelKey]}deg)`;
+            }
+
+            setTimeout(() => {
+                state.results[wheelKey] = selectedIndex;
+                console.log(`🎯 ${wheelKey} Result:`, selectedIndex);
+
+                const allWheelsFinished = Object.values(state.results).every(result => result !== null);
+                if (allWheelsFinished) {
+                    state.spinning = false;
+                    state.isWaiting = false;
+                    updateResultsDisplay();
+                    updateSelectorsState();
+                }
+            }, 7000);
+        }
+
+        function createWheelBackground() {
+            const sliceAngle = 360 / prizes.length;
+            let gradient = "conic-gradient(";
+            prizes.forEach((_, i) => {
+                const start = i * sliceAngle;
+                const end = start + sliceAngle;
+                gradient += `${colors[i]} ${start}deg ${end}deg,`;
+            });
+            return gradient.slice(0, -1) + ")";
+        }
+
+        function createWheel(wheelKey) {
+            const sliceAngle = 360 / prizes.length;
+            const background = createWheelBackground();
+
+            return `
+                <div class="wheel-container" data-wheel="${wheelKey}">
+                    <div class="wheel-glow"></div>
+                    <div class="wheel-rim"></div>
+                    <div class="wheel-arrow"></div>
+                    <div class="wheel-main" style="background: ${background}; transform: rotate(${wheelRotations[wheelKey]}deg);">
+                        ${prizes.map((p, i) => `
+                            <div class="wheel-number" style="transform: rotate(${i * sliceAngle + sliceAngle / 2}deg);">
+                                <span>${p}</span>
+                            </div>
+                        `).join('')}
+                        <div class="wheel-shine"></div>
+                    </div>
+                    <button class="wheel-center-button">
+                        <span class="wheel-center-shine"></span>
+                    </button>
+                </div>
+            `;
+        }
+
+        function createWheelSection(label, wheel1Key, wheel2Key) {
+            const showSelections = state.token !== null;
+
+            return `
+                <div class="wheel-section">
+                    <span class="wheel-label">${label}</span>
+                    <div class="wheels-grid">
+                        ${createWheel(wheel1Key)}
+                        ${createWheel(wheel2Key)}
+                        ${showSelections ? `
+                            <div class="selection-container">
+                                <div class="selection-box">
+                                    <div class="selection-glow"></div>
+                                    <div class="selection-inputs">
+                                        <select class="wheel-select" data-select="${wheel1Key}" ${state.spinning ? 'disabled' : ''}>
+                                            <option value="">X</option>
+                                            ${prizes.map(d => `<option value="${d}" ${state.userSelections[wheel1Key] === parseInt(d) ? 'selected' : ''}>${d}</option>`).join('')}
+                                        </select>
+                                        <select class="wheel-select" data-select="${wheel2Key}" ${state.spinning ? 'disabled' : ''}>
+                                            <option value="">X</option>
+                                            ${prizes.map(d => `<option value="${d}" ${state.userSelections[wheel2Key] === parseInt(d) ? 'selected' : ''}>${d}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getMinutesAndSeconds(timeLeft) {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            return { minutes, seconds };
+        }
+
+        function initialRender() {
+            fullRender();
+        }
+
+        function fullRender() {
+            const app = document.getElementById('app');
+
+            if (state.gameClosed) {
+                renderGameClosed(app);
+                return;
+            }
+
+            renderGameActive(app);
+            attachEventListeners();
+        }
+
+        function renderGameClosed(app) {
+            const nextGameTime = state.nextGameStart instanceof Date && !isNaN(state.nextGameStart.getTime())
+                ? state.nextGameStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                : '9:00 AM';
+
+            const hours = Math.floor(state.timeUntilNextGame / 3600);
+            const minutes = Math.floor((state.timeUntilNextGame % 3600) / 60);
+            const seconds = state.timeUntilNextGame % 60;
+
+            app.innerHTML = `
+                <div class="game-closed">
+                    <div class="game-closed-content">
+                        <div class="game-closed-icon">🌙</div>
+                        <h1 class="game-closed-title">Game Closed</h1>
+                        <p class="game-closed-description">The game is currently closed. Next game starts tomorrow at ${nextGameTime}.</p>
+                        
+                        <div class="countdown-box">
+                            <p class="countdown-title">Next Game Countdown</p>
+                            <div class="countdown-grid">
+                                <div class="countdown-item">
+                                    <p class="countdown-value" id="closed-hours">${hours}</p>
+                                    <p class="countdown-label">Hours</p>
+                                </div>
+                                <div class="countdown-item">
+                                    <p class="countdown-value" id="closed-minutes">${minutes}</p>
+                                    <p class="countdown-label">Minutes</p>
+                                </div>
+                                <div class="countdown-item">
+                                    <p class="countdown-value" id="closed-seconds">${seconds}</p>
+                                    <p class="countdown-label">Seconds</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="game-closed-footer">Please check back tomorrow for the next game session.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGameActive(app) {
+            const { minutes, seconds } = getMinutesAndSeconds(state.isGameActive ? state.roundTimeLeft : state.timeUntilNextGame);
+
+            app.innerHTML = `
+                <div class="container">
+                    <div class="game-layout">
+                        <div class="wheels-container">
+                            ${createWheelSection('A', 'a1', 'a2')}
+                            ${createWheelSection('B', 'b1', 'b2')}
+                            ${createWheelSection('C', 'c1', 'c2')}
+                        </div>
+                        
+                        <div class="info-panel">
+                            <div class="game-timing">
+                                <p class="game-timing-label">GAME RESULT TIMING</p>
+                                <div class="timing-display">
+                                    <span class="time-badge">09:00 AM</span>
+                                    <span class="time-separator">TO</span>
+                                    <span class="time-badge">09:00 PM</span>
+                                </div>
+                            </div>
+                            
+                            <div class="timer-box">
+                                <p class="timer-title">Results On Time</p>
+                                <div class="timer-grid">
+                                    <div class="timer-item">
+                                        <p class="timer-value" id="timer-minutes">${minutes}</p>
+                                        <p class="timer-label">Minute</p>
+                                    </div>
+                                    <div class="timer-item">
+                                        <p class="timer-value" id="timer-seconds">${seconds}</p>
+                                        <p class="timer-label">Second</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="results-container" onclick="window.location.href='/history'">
+                                <div class="results-box">
+                                    <p class="results-title">Result</p>
+                                    <p class="results-subtitle">Old Result Click here</p>
+                                    
+                                    <div class="results-content">
+                                        <div class="results-grid" id="results-grid">
+                                            ${['A', 'B', 'C'].map(label => {
+                const key1 = `${label.toLowerCase()}1`;
+                const key2 = `${label.toLowerCase()}2`;
+                const val1 = state.results[key1] !== null ? state.results[key1] : '—';
+                const val2 = state.results[key2] !== null ? state.results[key2] : '—';
+                return `
+                                                    <div class="result-item">
+                                                        <div class="result-label">${label}</div>
+                                                        <div class="result-value">${val1}${val2}</div>
+                                                    </div>
+                                                `;
+            }).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update only timer values without re-rendering entire DOM
+        function updateTimerOnly() {
+            const minutesEl = document.getElementById('timer-minutes');
+            const secondsEl = document.getElementById('timer-seconds');
+
+            if (minutesEl && secondsEl) {
+                const { minutes, seconds } = getMinutesAndSeconds(state.isGameActive ? state.roundTimeLeft : state.timeUntilNextGame);
+                minutesEl.textContent = minutes;
+                secondsEl.textContent = seconds;
+            }
+
+            // Update closed game countdown if visible
+            const closedHours = document.getElementById('closed-hours');
+            const closedMinutes = document.getElementById('closed-minutes');
+            const closedSeconds = document.getElementById('closed-seconds');
+
+            if (closedHours && closedMinutes && closedSeconds) {
+                const hours = Math.floor(state.timeUntilNextGame / 3600);
+                const minutes = Math.floor((state.timeUntilNextGame % 3600) / 60);
+                const seconds = state.timeUntilNextGame % 60;
+
+                closedHours.textContent = hours;
+                closedMinutes.textContent = minutes;
+                closedSeconds.textContent = seconds;
             }
         }
 
-        // Update results display
-        function updateResults() {
-            const formatResult = (v1, v2) => {
-                const d1 = v1 !== null ? v1 : '—';
-                const d2 = v2 !== null ? v2 : '—';
-                return d1 + '' + d2;
-            };
-            
-            document.getElementById('result-a').textContent = formatResult(results.a1, results.a2);
-            document.getElementById('result-b').textContent = formatResult(results.b1, results.b2);
-            document.getElementById('result-c').textContent = formatResult(results.c1, results.c2);
+        // Update only results display without re-rendering wheels
+        function updateResultsDisplay() {
+            const resultsGrid = document.getElementById('results-grid');
+
+            if (resultsGrid) {
+                resultsGrid.innerHTML = ['A', 'B', 'C'].map(label => {
+                    const key1 = `${label.toLowerCase()}1`;
+                    const key2 = `${label.toLowerCase()}2`;
+                    const val1 = state.results[key1] !== null ? state.results[key1] : '—';
+                    const val2 = state.results[key2] !== null ? state.results[key2] : '—';
+                    return `
+                        <div class="result-item">
+                            <div class="result-label">${label}</div>
+                            <div class="result-value">${val1}${val2}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
-        // Socket.io connection (optional - uncomment if backend is available)
-        
-        const SOCKET_URL = 'http://localhost:8000';
-        socket = io(SOCKET_URL, { path: '/api/socket' });
-        
-        socket.on('game-state', (data) => {
-            if (data.roundTimeLeft) roundTimeLeft = data.roundTimeLeft;
-            if (data.currentResults) {
-                results = data.currentResults;
-                updateResults();
-            }
-        });
-        
-        socket.on('game-timer', (data) => {
-            roundTimeLeft = data.roundTimeLeft;
-        });
-        
-        socket.on('wheel-values-update', (data) => {
-            Object.keys(data.wheelValues).forEach(key => {
-                if (data.wheelValues[key] !== null) {
-                    wheels[key].spin(data.wheelValues[key]);
-                    results[key] = data.wheelValues[key];
+        // Update selector disabled state without full re-render
+        function updateSelectorsState() {
+            document.querySelectorAll('.wheel-select').forEach(select => {
+                if (state.spinning) {
+                    select.disabled = true;
+                } else {
+                    select.disabled = false;
                 }
             });
-            updateResults();
-        });
+        }
 
-        // Demo: Random spin every 20 seconds
-        setInterval(() => {
-            const keys = Object.keys(wheels);
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
-            const randomValue = Math.floor(Math.random() * 10);
-            
-            wheels[randomKey].spin(randomValue);
-            results[randomKey] = randomValue;
-            
-            setTimeout(() => {
-                updateResults();
-            }, 3100);
-        }, 20000);
+        // Start timer update interval
+        function startTimerUpdate() {
+            setInterval(() => {
+                if (state.isGameActive && state.roundTimeLeft > 0) {
+                    state.roundTimeLeft--;
+                    updateTimerOnly();
+                } else if (state.gameClosed && state.timeUntilNextGame > 0) {
+                    state.timeUntilNextGame--;
+                    updateTimerOnly();
+                }
+            }, 1000);
+        }
 
-        // Start timer
-        setInterval(updateTimer, 1000);
-        updateTimer();
+        // Attach event listeners for user interactions
+        function attachEventListeners() {
+            document.querySelectorAll('[data-select]').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const wheelKey = e.target.getAttribute('data-select');
+                    const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                    state.userSelections[wheelKey] = value;
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            Object.values(wheels).forEach(wheel => {
-                wheel.resize();
-                wheel.draw();
+                    if (state.socket) {
+                        state.socket.emit('user-selection', {
+                            ...state.userSelections,
+                            timestamp: Date.now()
+                        });
+                    }
+                });
             });
-        });
+        }
+
+        // Start app
+        init();
     </script>
 </body>
+
 </html>
