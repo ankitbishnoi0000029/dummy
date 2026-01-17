@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casino Spin Wheel Game</title>
+    <!-- Include Socket.IO client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <style type="text/css">
         /* Basic reset for old browsers */
         body,
@@ -343,6 +345,31 @@
             background: rgba(0, 0, 0, 0.3);
             border-radius: 5px;
         }
+        
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .connected {
+            background: #008200;
+            color: white;
+        }
+        
+        .disconnected {
+            background: #EC2721;
+            color: white;
+        }
+        
+        .connecting {
+            background: #ffcc00;
+            color: black;
+        }
     </style>
 </head>
 
@@ -362,20 +389,23 @@
             spinning: false,
             isWaiting: false,
             gameClosed: false,
-            isGameActive: true,
+            isGameActive: false,
             currentRound: 1,
-            roundTimeLeft: 60, // 2 minutes for demo
+            roundTimeLeft: 0,
             timeUntilNextGame: 0,
             nextGameStart: null,
             token: null,
             socket: null,
             results: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
-            serverWheelValues: { a1: 3, a2: 7, b1: 2, b2: 5, c1: 9, c2: 1 },
+            serverWheelValues: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
             userSelections: { a1: undefined, a2: undefined, b1: undefined, b2: undefined, c1: undefined, c2: undefined }
         };
 
         var wheelRotations = { a1: 0, a2: 0, b1: 0, b2: 0, c1: 0, c2: 0 };
-        var wheelAnimations = {};
+        var connectionStatusEl = null;
+        var gameTimerInterval = null;
+        var autoSpinInterval = null;
+        var uiInitialized = false;
 
         // Initialize when page loads
         window.onload = function () {
@@ -393,68 +423,126 @@
             // Initialize socket connection
             initSocket();
 
-            // Render the initial UI
-            renderGameScreen();
+            // Create connection status indicator
+            createConnectionStatus();
+        }
 
-            // Initialize all canvases
-            initAllWheels();
+        function createConnectionStatus() {
+            connectionStatusEl = document.createElement('div');
+            connectionStatusEl.className = 'connection-status connecting';
+            connectionStatusEl.textContent = 'Connecting...';
+            document.body.appendChild(connectionStatusEl);
+        }
 
-            // Start timer
-            startGameTimer();
-
-            // Auto-spin check
-            setInterval(checkAutoSpin, 1000);
+        function updateConnectionStatus(status, message) {
+            if (!connectionStatusEl) return;
+            
+            connectionStatusEl.className = 'connection-status ' + status;
+            connectionStatusEl.textContent = message;
         }
 
         function initSocket() {
             try {
-                // For demo, we'll simulate socket behavior
-                // In real implementation, use: 
-                // var socket = io('http://your-server-url');
+                state.socket = io('http://localhost:8000', {
+                    path: '/api/socket',
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 10,
+                    reconnectionDelay: 1000
+                });
 
-                // Simulate receiving game state
-                setTimeout(function () {
-                    simulateGameStateUpdate();
-                }, 1000);
+                // Socket event handlers
+                state.socket.on('connect', function() {
+                    console.log('🟢 Connected to game server');
+                    updateConnectionStatus('connected', 'Connected');
+                    
+                    // Request current game state
+                    state.socket.emit('get-game-state');
+                });
 
-                // Simulate receiving wheel values update
-                setInterval(function () {
-                    simulateWheelValuesUpdate();
-                }, 5000);
+                state.socket.on('connect_error', function(err) {
+                    console.log('Connection error:', err);
+                    updateConnectionStatus('disconnected', 'Connection Failed');
+                    
+                    // Fallback: render with demo data
+                    setTimeout(function() {
+                        if (!state.socket || !state.socket.connected) {
+                            console.log('Using fallback mode');
+                            renderWithFallbackData();
+                        }
+                    }, 2000);
+                });
+
+                state.socket.on('disconnect', function() {
+                    console.log('🔴 Disconnected from server');
+                    updateConnectionStatus('disconnected', 'Disconnected');
+                });
+
+                state.socket.on('game-state', function(data) {
+                    console.log('Received game state:', data);
+                    handleGameState(data);
+                });
+
+                state.socket.on('game-timer', function(data) {
+                    console.log('Game timer update:', data);
+                    handleGameTimer(data);
+                });
+
+                state.socket.on('round-start', function(data) {
+                    console.log('Round start:', data);
+                    handleRoundStart(data);
+                });
+
+                state.socket.on('wheel-values-update', function(data) {
+                    console.log('Wheel values update:', data);
+                    handleWheelValuesUpdate(data);
+                });
+
+                state.socket.on('game-closed', function(data) {
+                    console.log('Game closed:', data);
+                    handleGameClosed(data);
+                });
+
+                state.socket.on('wheel-result', function(data) {
+                    console.log('Wheel result from server:', data);
+                    handleWheelResult(data);
+                });
+
+                state.socket.on('game-result', function(data) {
+                    console.log('Game result from server:', data);
+                    handleGameResult(data);
+                });
 
             } catch (e) {
-                console.log('Socket initialization failed, using demo mode');
+                console.log('Socket initialization failed:', e);
+                updateConnectionStatus('disconnected', 'Connection Error');
+                
+                // Fallback to demo mode
+                setTimeout(function() {
+                    renderWithFallbackData();
+                }, 1000);
             }
         }
 
-        function simulateGameStateUpdate() {
-            // Simulate server sending game state
-            var simulatedState = {
-                isActive: true,
-                currentRound: 1,
-                roundTimeLeft: state.roundTimeLeft,
-                timeUntilEnd: 7200,
-                currentResults: state.results
-            };
-
-            handleGameState(simulatedState);
-        }
-
-        function simulateWheelValuesUpdate() {
-            // Simulate server sending updated wheel values
-            var simulatedValues = {
-                wheelValues: {
-                    a1: Math.floor(Math.random() * 10),
-                    a2: Math.floor(Math.random() * 10),
-                    b1: Math.floor(Math.random() * 10),
-                    b2: Math.floor(Math.random() * 10),
-                    c1: Math.floor(Math.random() * 10),
-                    c2: Math.floor(Math.random() * 10)
-                },
-                timestamp: Date.now()
-            };
-
-            handleWheelValuesUpdate(simulatedValues);
+        function renderWithFallbackData() {
+            // Use demo data when socket fails
+            state.isGameActive = true;
+            state.currentRound = 1;
+            state.roundTimeLeft = 120;
+            
+            // Generate random wheel values for demo
+            var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+            for (var i = 0; i < wheels.length; i++) {
+                state.serverWheelValues[wheels[i]] = Math.floor(Math.random() * 10);
+            }
+            
+            // Clear previous intervals
+            clearTimers();
+            
+            renderGameScreen();
+            initAllWheels();
+            startGameTimer();
+            startAutoSpinCheck();
         }
 
         function handleGameState(data) {
@@ -462,6 +550,8 @@
             state.gameClosed = !data.isActive;
             state.currentRound = data.currentRound || 1;
             state.roundTimeLeft = data.roundTimeLeft || 0;
+            state.timeUntilNextGame = data.timeUntilStart || 0;
+            state.nextGameStart = data.nextGameStart || null;
 
             if (data.currentResults) {
                 for (var key in data.currentResults) {
@@ -471,26 +561,91 @@
                 }
             }
 
+            // Clear previous intervals
+            clearTimers();
+            
+            renderGameScreen();
+            initAllWheels();
+            startGameTimer();
+            startAutoSpinCheck();
+        }
+
+        function handleGameTimer(data) {
+            state.roundTimeLeft = data.roundTimeLeft;
+            state.currentRound = data.roundNumber;
+            state.isGameActive = data.isActive;
+            updateTimerOnly();
+        }
+
+        function handleRoundStart(data) {
+            state.currentRound = data.roundNumber;
+            state.roundTimeLeft = data.roundTimeLeft;
+            state.serverWheelValues = data.wheelValues;
+            
+            // Don't auto-spin here - let checkAutoSpin handle it
+            // Just update UI
+            updateSelectorsState();
             updateResultsDisplay();
+            updateStatusMessage();
         }
 
         function handleWheelValuesUpdate(data) {
             if (data && data.wheelValues) {
                 state.serverWheelValues = data.wheelValues;
-                console.log('Updated wheel values:', state.serverWheelValues);
+                console.log('Updated wheel values from server:', state.serverWheelValues);
+            }
+        }
+
+        function handleGameClosed(data) {
+            state.gameClosed = true;
+            state.isGameActive = false;
+            state.timeUntilNextGame = data.timeUntilNextGame;
+            state.nextGameStart = data.nextGameStart;
+            renderGameScreen();
+        }
+
+        function handleWheelResult(data) {
+            if (data && data.wheel && data.result !== undefined) {
+                state.results[data.wheel] = data.result;
+                updateResultsDisplay();
+            }
+        }
+
+        function handleGameResult(data) {
+            if (data && data.results) {
+                for (var key in data.results) {
+                    if (data.results.hasOwnProperty(key)) {
+                        state.results[key] = data.results[key];
+                    }
+                }
+                updateResultsDisplay();
             }
         }
 
         function sendUserSelection() {
-            // In real implementation, send to server via socket
-            // if (state.socket) {
-            //     state.socket.emit('user-selection', {
-            //         userSelections: state.userSelections,
-            //         timestamp: Date.now()
-            //     });
-            // }
+            if (state.socket && state.socket.connected) {
+                state.socket.emit('user-selection', {
+                    a1: state.userSelections.a1,
+                    a2: state.userSelections.a2,
+                    b1: state.userSelections.b1,
+                    b2: state.userSelections.b2,
+                    c1: state.userSelections.c1,
+                    c2: state.userSelections.c2,
+                    timestamp: Date.now()
+                });
+                console.log('User selections sent to server:', state.userSelections);
+            }
+        }
 
-            console.log('User selections sent:', state.userSelections);
+        function sendGameResult() {
+            if (state.socket && state.socket.connected) {
+                state.socket.emit('game-result', {
+                    results: state.results,
+                    round: state.currentRound,
+                    timestamp: Date.now()
+                });
+                console.log('Game results sent to server:', state.results);
+            }
         }
 
         function renderGameScreen() {
@@ -502,6 +657,8 @@
             } else {
                 renderActiveGameScreen(app);
             }
+            
+            uiInitialized = true;
         }
 
         function renderActiveGameScreen(app) {
@@ -537,8 +694,8 @@
             var statusDiv = document.createElement('div');
             statusDiv.className = 'status-message';
             statusDiv.id = 'status-message';
-            statusDiv.innerHTML = 'Round ' + state.currentRound + ' | Time left: ' + state.roundTimeLeft + 's';
             rightCol.appendChild(statusDiv);
+            updateStatusMessage();
 
             // Timer
             var timerDiv = document.createElement('div');
@@ -574,10 +731,10 @@
                 var key2 = label.toLowerCase() + '2';
                 var val1 = state.results[key1] !== null ? state.results[key1] : '-';
                 var val2 = state.results[key2] !== null ? state.results[key2] : '-';
-                console.log(val1, val2)
+
                 resultsHtml += '<div class="result-item">' +
                     '<div class="result-label">' + label + '</div>' +
-                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 + "" + val2 + '</div>' +
+                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 + val2 + '</div>' +
                     '</div>';
             }
 
@@ -620,6 +777,22 @@
                 '<div style="color:#999;font-size:14px;">Please check back tomorrow for the next game session.</div>';
 
             app.appendChild(closedDiv);
+        }
+
+        function updateStatusMessage() {
+            var statusEl = document.getElementById('status-message');
+            if (!statusEl) return;
+            
+            var statusText = 'Round ' + state.currentRound;
+            if (state.roundTimeLeft > 0) {
+                statusText += ' | Time left: ' + state.roundTimeLeft + 's';
+            }
+            if (state.spinning) {
+                statusText = 'Spinning wheels...';
+            } else if (state.roundTimeLeft <= 30 && state.roundTimeLeft > 0) {
+                statusText += ' (Spinning soon!)';
+            }
+            statusEl.innerHTML = statusText;
         }
 
         function createWheelSection(label, wheel1Key, wheel2Key) {
@@ -676,35 +849,31 @@
             pairDiv.appendChild(container2);
             section.appendChild(pairDiv);
 
-            // Selection dropdowns
-            // if (state.token) {
-            if (true) {
+            // Selection dropdowns (always show for testing)
+            var selectionDiv = document.createElement('div');
+            selectionDiv.className = 'selection-box';
 
-                var selectionDiv = document.createElement('div');
-                selectionDiv.className = 'selection-box';
+            var select1 = document.createElement('select');
+            select1.className = 'wheel-select';
+            select1.id = 'select-' + wheel1Key;
+            select1.onchange = function () {
+                handleSelectionChange(wheel1Key, this.value);
+            };
 
-                var select1 = document.createElement('select');
-                select1.className = 'wheel-select';
-                select1.id = 'select-' + wheel1Key;
-                select1.onchange = function () {
-                    handleSelectionChange(wheel1Key, this.value);
-                };
+            var select2 = document.createElement('select');
+            select2.className = 'wheel-select';
+            select2.id = 'select-' + wheel2Key;
+            select2.onchange = function () {
+                handleSelectionChange(wheel2Key, this.value);
+            };
 
-                var select2 = document.createElement('select');
-                select2.className = 'wheel-select';
-                select2.id = 'select-' + wheel2Key;
-                select2.onchange = function () {
-                    handleSelectionChange(wheel2Key, this.value);
-                };
+            // Add options
+            addOptionsToSelect(select1, state.userSelections[wheel1Key]);
+            addOptionsToSelect(select2, state.userSelections[wheel2Key]);
 
-                // Add options
-                addOptionsToSelect(select1, state.userSelections[wheel1Key]);
-                addOptionsToSelect(select2, state.userSelections[wheel2Key]);
-
-                selectionDiv.appendChild(select1);
-                selectionDiv.appendChild(select2);
-                section.appendChild(selectionDiv);
-            }
+            selectionDiv.appendChild(select1);
+            selectionDiv.appendChild(select2);
+            section.appendChild(selectionDiv);
 
             return section;
         }
@@ -755,7 +924,7 @@
             var wheelKeys = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
             for (var i = 0; i < wheelKeys.length; i++) {
                 var key = wheelKeys[i];
-                drawWheel('canvas-' + key, wheelRotations[key], null);
+                drawWheel('canvas-' + key, wheelRotations[key], state.results[key]);
             }
         }
 
@@ -847,7 +1016,7 @@
             }
         }
 
-        function spinWheel(wheelKey, targetValue, callback) {
+        function spinWheel(wheelKey, targetValue) {
             var hasInput = targetValue !== undefined && targetValue !== null;
             var selectedIndex = hasInput ? targetValue : Math.floor(Math.random() * prizes.length);
 
@@ -856,22 +1025,21 @@
             var fullRotation = randomRounds * 360;
 
             // Calculate the target position so the selected segment stops at the arrow (top)
-            // Arrow is at 0 degrees (top), we want selected segment at 0 degrees
             var sliceCenter = selectedIndex * sliceAngle + sliceAngle / 2;
             var currentAngle = wheelRotations[wheelKey] % 360;
 
             // Calculate the final rotation needed to bring selected segment to arrow
-            // Arrow is at -90 degrees (12 o'clock position), so we need to adjust
-            var targetAngle = 360 - sliceCenter - 90; // Adjust for arrow at top
+            // Arrow is at -90 degrees (12 o'clock position)
+            var targetAngle = 360 - sliceCenter - 90;
             var finalRotation = wheelRotations[wheelKey] + fullRotation + (targetAngle - currentAngle);
 
             console.log('Spinning wheel', wheelKey, 'to value', selectedIndex,
                 'sliceCenter:', sliceCenter, 'finalRotation:', finalRotation);
 
-            // Animate the spin
+            // Animate the spin - FIXED: 7 seconds duration
             var startRotation = wheelRotations[wheelKey];
             var endRotation = finalRotation;
-            var duration = 7000;
+            var duration = 7000; // 7 seconds exactly
             var startTime = Date.now();
 
             function animate() {
@@ -896,12 +1064,49 @@
 
                     // Update results display
                     updateResultsDisplay();
+                    
+                    // Send individual wheel result to server
+                    if (state.socket && state.socket.connected) {
+                        state.socket.emit('wheel-result', {
+                            wheel: wheelKey,
+                            result: selectedIndex,
+                            timestamp: Date.now()
+                        });
+                    }
 
-                    if (callback) callback();
+                    // Check if all wheels are done
+                    checkAllWheelsComplete();
                 }
             }
 
             animate();
+        }
+
+        function checkAllWheelsComplete() {
+            var allDone = true;
+            var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+            for (var i = 0; i < wheels.length; i++) {
+                if (state.results[wheels[i]] === null) {
+                    allDone = false;
+                    break;
+                }
+            }
+
+            if (allDone) {
+                state.spinning = false;
+                state.isWaiting = false;
+                
+                // Update status
+                updateStatusMessage();
+
+                // Re-enable selection dropdowns
+                updateSelectorsState();
+                
+                // Send complete game result to server
+                sendGameResult();
+                
+                console.log('All wheels stopped. Results:', state.results);
+            }
         }
 
         function updateResultsDisplay() {
@@ -916,82 +1121,70 @@
                 // Update result display
                 var resultElement = document.getElementById('result-' + label.toLowerCase());
                 if (resultElement) {
-                    resultElement.textContent = val1 + "" + val2;
+                    resultElement.textContent = val1 + val2;
                 }
+            }
+        }
 
+        function updateSelectorsState() {
+            var selects = document.getElementsByTagName('select');
+            for (var i = 0; i < selects.length; i++) {
+                selects[i].disabled = state.spinning;
             }
         }
 
         function checkAutoSpin() {
+            // Only auto-spin when 30 seconds left and not already spinning
             if (state.roundTimeLeft <= 30 && state.isGameActive && !state.spinning && !state.isWaiting) {
                 state.spinning = true;
                 state.isWaiting = true;
 
                 // Update status
-                var statusElement = document.getElementById('status-message');
-                if (statusElement) {
-                    statusElement.innerHTML = 'Spinning wheels...';
-                }
+                updateStatusMessage();
 
                 // Disable selection dropdowns
-                var selects = document.getElementsByTagName('select');
-                for (var i = 0; i < selects.length; i++) {
-                    selects[i].disabled = true;
-                }
+                updateSelectorsState();
 
                 console.log('Auto-spin triggered! Time left:', state.roundTimeLeft);
 
                 // Spin all wheels with server values
                 var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
-                var completed = 0;
-
                 for (var i = 0; i < wheels.length; i++) {
                     var wheelKey = wheels[i];
                     var targetValue = state.serverWheelValues[wheelKey];
-
-                    spinWheel(wheelKey, targetValue, function () {
-                        completed++;
-                        if (completed === wheels.length) {
-                            state.spinning = false;
-                            state.isWaiting = false;
-
-                            // Update status
-                            var statusElement = document.getElementById('status-message');
-                            if (statusElement) {
-                                statusElement.innerHTML = 'Round ' + state.currentRound + ' completed!';
-                            }
-
-                            // Re-enable selection dropdowns
-                            var selects = document.getElementsByTagName('select');
-                            for (var j = 0; j < selects.length; j++) {
-                                selects[j].disabled = false;
-                            }
-
-                            console.log('All wheels stopped. Results:', state.results);
-
-
-                            // In real implementation, send results to server
-                            // if (state.socket) {
-                            //     state.socket.emit('game-result', {
-                            //         results: state.results,
-                            //         round: state.currentRound
-                            //     });
-                            // }
-                        }
-                    });
+                    
+                    // Start spinning each wheel with a slight delay
+                    setTimeout(function(wheelKey, targetValue) {
+                        return function() {
+                            spinWheel(wheelKey, targetValue);
+                        };
+                    }(wheelKey, targetValue), i * 100);
                 }
             }
         }
 
+        function startAutoSpinCheck() {
+            // Clear previous interval
+            if (autoSpinInterval) {
+                clearInterval(autoSpinInterval);
+            }
+            
+            autoSpinInterval = setInterval(checkAutoSpin, 1000);
+        }
+
         function startGameTimer() {
-            setInterval(function () {
+            // Clear previous interval
+            if (gameTimerInterval) {
+                clearInterval(gameTimerInterval);
+            }
+            
+            gameTimerInterval = setInterval(function () {
                 if (state.isGameActive && state.roundTimeLeft > 0) {
                     state.roundTimeLeft--;
 
                     // Update timer display
                     var minutesEl = document.getElementById('timer-minutes');
                     var secondsEl = document.getElementById('timer-seconds');
-                    var statusEl = document.getElementById('status-message');
 
                     if (minutesEl) {
                         minutesEl.textContent = padZero(Math.floor(state.roundTimeLeft / 60));
@@ -999,11 +1192,9 @@
                     if (secondsEl) {
                         secondsEl.textContent = padZero(state.roundTimeLeft % 60);
                     }
-                    if (statusEl) {
-                        statusEl.innerHTML = 'Round ' + state.currentRound +
-                            ' | Time left: ' + state.roundTimeLeft + 's' +
-                            (state.roundTimeLeft <= 30 ? ' (Spinning soon!)' : '');
-                    }
+                    
+                    // Update status message
+                    updateStatusMessage();
                 }
 
                 // Update closed countdown if needed
@@ -1027,9 +1218,41 @@
             }, 1000);
         }
 
+        function updateTimerOnly() {
+            var minutesEl = document.getElementById('timer-minutes');
+            var secondsEl = document.getElementById('timer-seconds');
+
+            if (minutesEl && secondsEl) {
+                minutesEl.textContent = padZero(Math.floor(state.roundTimeLeft / 60));
+                secondsEl.textContent = padZero(state.roundTimeLeft % 60);
+            }
+
+            // Update status
+            updateStatusMessage();
+        }
+
+        function clearTimers() {
+            if (gameTimerInterval) {
+                clearInterval(gameTimerInterval);
+                gameTimerInterval = null;
+            }
+            if (autoSpinInterval) {
+                clearInterval(autoSpinInterval);
+                autoSpinInterval = null;
+            }
+        }
+
         function padZero(num) {
             return num < 10 ? '0' + num : num.toString();
         }
+        
+        // Cleanup on page unload
+        window.onbeforeunload = function() {
+            clearTimers();
+            if (state.socket && state.socket.connected) {
+                state.socket.disconnect();
+            }
+        };
     </script>
 </body>
 
