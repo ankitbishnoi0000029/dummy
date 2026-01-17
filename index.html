@@ -5,12 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casino Spin Wheel Game</title>
-    <!-- Socket.IO with fallback -->
-    <script>
-        if (!window.io) {
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"><\/script>');
-        }
-    </script>
+    <!-- Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
@@ -60,6 +55,7 @@
             border: 1px solid rgba(99, 102, 241, 0.4);
             background: rgba(255, 255, 255, 0.05);
             margin-bottom: 20px;
+            padding: 15px;
         }
 
         .wheel-label {
@@ -137,6 +133,7 @@
             bottom: 0;
             border-radius: 50%;
             background: #fbbf24;
+            border: 4px solid #d97706;
         }
 
         .wheel-arrow {
@@ -169,6 +166,7 @@
             bottom: 8px;
             border-radius: 50%;
             transition: transform 7s ease-out;
+            overflow: hidden;
         }
 
         @media (min-width: 768px) {
@@ -180,6 +178,26 @@
             }
         }
 
+        /* NEW: Canvas-based wheel for older browsers */
+        .wheel-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .wheel-numbers-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            z-index: 2;
+        }
+
         .wheel-number {
             position: absolute;
             top: 0;
@@ -188,12 +206,15 @@
             bottom: 0;
             display: flex;
             justify-content: center;
+            transform-origin: center;
         }
 
         .wheel-number span {
             margin-top: 10px;
             font-size: 12px;
             font-weight: 800;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         @media (min-width: 768px) {
@@ -590,15 +611,6 @@
     <div id="app"></div>
 
     <script>
-        // Polyfill for older browsers
-        if (!window.Promise) {
-            document.write('<script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js"><\/script>');
-        }
-        
-        if (!window.fetch) {
-            document.write('<script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.6.2/dist/fetch.umd.min.js"><\/script>');
-        }
-
         // Game configuration
         var prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
         var colors = [
@@ -624,6 +636,7 @@
         };
 
         var wheelRotations = { a1: 0, a2: 0, b1: 0, b2: 0, c1: 0, c2: 0 };
+        var canvasElements = {};
 
         // Initialize the game
         function init() {
@@ -652,11 +665,8 @@
 
                 socket.on('connect_error', function(err) {
                     console.log('Connection error:', err);
-                    // Fallback to polling if websocket fails
-                    socket.io.opts.transports = ['polling'];
                 });
 
-                // Rest of socket event handlers...
                 socket.on('game-state', handleGameState);
                 socket.on('game-timer', handleGameTimer);
                 socket.on('round-start', handleRoundStart);
@@ -665,7 +675,6 @@
 
             } catch (error) {
                 console.error('Socket initialization error:', error);
-                // Continue without socket for demo purposes
                 setTimeout(function() {
                     handleGameState({
                         isActive: true,
@@ -735,6 +744,67 @@
             fullRender();
         }
 
+        // NEW: Draw wheel using Canvas (works in all browsers)
+        function drawWheelCanvas(wheelKey, rotation) {
+            var canvas = canvasElements[wheelKey];
+            if (!canvas) return;
+            
+            var ctx = canvas.getContext('2d');
+            var width = canvas.width;
+            var height = canvas.height;
+            var centerX = width / 2;
+            var centerY = height / 2;
+            var radius = Math.min(width, height) / 2;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw colored segments
+            var sliceAngle = (2 * Math.PI) / prizes.length;
+            
+            // Apply rotation
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.translate(-centerX, -centerY);
+            
+            for (var i = 0; i < prizes.length; i++) {
+                var startAngle = i * sliceAngle;
+                var endAngle = startAngle + sliceAngle;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                
+                ctx.fillStyle = colors[i];
+                ctx.fill();
+                
+                // Add border between segments
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.closePath();
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Draw center circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fillStyle = '#fbbf24';
+            ctx.fill();
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
         // Wheel spinning logic
         function spinWheel(wheelKey, value) {
             var hasInput = typeof value === "number" && value >= 0 && value < prizes.length;
@@ -749,9 +819,21 @@
             var targetAngle = 360 - sliceCenter - 110;
             wheelRotations[wheelKey] += fullRotation + (targetAngle - currentAngle);
 
+            // Update canvas rotation
+            if (canvasElements[wheelKey]) {
+                drawWheelCanvas(wheelKey, wheelRotations[wheelKey]);
+            }
+
+            // Update CSS transform for modern browsers
             var wheelElement = document.querySelector('[data-wheel="' + wheelKey + '"] .wheel-main');
             if (wheelElement) {
                 wheelElement.style.transform = 'rotate(' + wheelRotations[wheelKey] + 'deg)';
+            }
+
+            // Update numbers rotation
+            var numbersContainer = document.querySelector('[data-wheel="' + wheelKey + '"] .wheel-numbers-container');
+            if (numbersContainer) {
+                numbersContainer.style.transform = 'rotate(' + (-wheelRotations[wheelKey]) + 'deg)';
             }
 
             setTimeout(function() {
@@ -775,21 +857,10 @@
         }
 
         // Wheel rendering
-        function createWheelBackground() {
-            var sliceAngle = 360 / prizes.length;
-            var gradient = "conic-gradient(";
-            for (var i = 0; i < prizes.length; i++) {
-                var start = i * sliceAngle;
-                var end = start + sliceAngle;
-                gradient += colors[i] + ' ' + start + 'deg ' + end + 'deg,';
-            }
-            return gradient.slice(0, -1) + ")";
-        }
-
         function createWheel(wheelKey) {
             var sliceAngle = 360 / prizes.length;
-            var background = createWheelBackground();
-
+            
+            // Create numbers HTML
             var numbersHtml = '';
             for (var i = 0; i < prizes.length; i++) {
                 numbersHtml += '<div class="wheel-number" style="transform: rotate(' + (i * sliceAngle + sliceAngle / 2) + 'deg);">' +
@@ -801,7 +872,16 @@
                    '<div class="wheel-glow"></div>' +
                    '<div class="wheel-rim"></div>' +
                    '<div class="wheel-arrow"></div>' +
-                   '<div class="wheel-main" style="background: ' + background + '; transform: rotate(' + wheelRotations[wheelKey] + 'deg);">' +
+                   '<div class="wheel-main" style="background: conic-gradient(' + 
+                   colors.map(function(color, index) {
+                       var start = (index * 100 / prizes.length) + '%';
+                       var end = ((index + 1) * 100 / prizes.length) + '%';
+                       return color + ' ' + start + ' ' + end;
+                   }).join(', ') + 
+                   '); transform: rotate(' + wheelRotations[wheelKey] + 'deg);">' +
+                   '</div>' +
+                   '<canvas class="wheel-canvas" id="canvas-' + wheelKey + '" width="300" height="300"></canvas>' +
+                   '<div class="wheel-numbers-container" style="transform: rotate(' + (-wheelRotations[wheelKey]) + 'deg);">' +
                    numbersHtml +
                    '</div>' +
                    '<button class="wheel-center-button"></button>' +
@@ -847,6 +927,23 @@
                    '</div>';
         }
 
+        // Initialize canvas after DOM is rendered
+        function initializeWheelCanvases() {
+            var wheelKeys = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+            wheelKeys.forEach(function(key) {
+                var canvas = document.getElementById('canvas-' + key);
+                if (canvas) {
+                    canvasElements[key] = canvas;
+                    // Set actual size from computed style
+                    var container = canvas.parentElement;
+                    var rect = container.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    drawWheelCanvas(key, wheelRotations[key]);
+                }
+            });
+        }
+
         // Timer utilities
         function getMinutesAndSeconds(timeLeft) {
             var minutes = Math.floor(timeLeft / 60);
@@ -873,7 +970,11 @@
                 renderGameActive(app);
             }
             
-            attachEventListeners();
+            // Initialize canvases after a short delay to ensure DOM is ready
+            setTimeout(function() {
+                initializeWheelCanvases();
+                attachEventListeners();
+            }, 100);
         }
 
         function renderGameClosed(app) {
@@ -1080,6 +1181,24 @@
                 });
             }
         }
+
+        // Handle window resize for canvas
+        window.addEventListener('resize', function() {
+            setTimeout(function() {
+                for (var key in canvasElements) {
+                    if (canvasElements.hasOwnProperty(key)) {
+                        var canvas = canvasElements[key];
+                        var container = canvas.parentElement;
+                        if (container) {
+                            var rect = container.getBoundingClientRect();
+                            canvas.width = rect.width;
+                            canvas.height = rect.height;
+                            drawWheelCanvas(key, wheelRotations[key]);
+                        }
+                    }
+                }
+            }, 100);
+        });
 
         // Start the app when DOM is ready
         if (document.readyState === 'loading') {
