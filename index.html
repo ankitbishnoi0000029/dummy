@@ -22,16 +22,16 @@
         #app {
             width: 100%;
             min-height: 100vh;
-            padding: 10px;
+            padding: 25px;
             box-sizing: border-box;
         }
 
         /* Container layout */
         .container {
             width: 100%;
-            max-width: 1200px;
             margin: 0 auto;
-            overflow: hidden;
+            /* overflow: hidden; */
+
         }
 
         /* Clearfix for old browsers */
@@ -47,7 +47,7 @@
             border: 2px solid #333344;
             border-radius: 8px;
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 5px;
             position: relative;
         }
 
@@ -68,7 +68,6 @@
 
         .wheel-pair {
             text-align: center;
-            padding: 20px 0;
         }
 
         /* Wheel containers */
@@ -90,7 +89,7 @@
             display: block;
             background: #222233;
             border-radius: 50%;
-            border: 4px solid #ffcc00;
+            /* border: 4px solid #ffcc00; */
         }
 
         .wheel-arrow {
@@ -104,14 +103,13 @@
             border-right: 10px solid transparent;
             border-bottom: 20px solid #ffcc00;
             z-index: 10;
+            rotate: 61deg;
         }
 
         /* Selection boxes */
         .selection-box {
             background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #ffcc00;
             border-radius: 5px;
-            padding: 10px;
             margin-top: 10px;
             display: inline-block;
         }
@@ -297,11 +295,13 @@
         @media all and (min-width: 768px) {
             .left-column {
                 width: 60%;
+                /* margin-left: 10px; */
+                /* margin-right: 10px; */
                 float: left;
             }
 
             .right-column {
-                width: 40%;
+                width: 37%;
                 float: right;
             }
         }
@@ -345,7 +345,7 @@
             background: rgba(0, 0, 0, 0.3);
             border-radius: 5px;
         }
-        
+
         .connection-status {
             position: fixed;
             top: 10px;
@@ -355,17 +355,17 @@
             font-size: 12px;
             z-index: 1000;
         }
-        
+
         .connected {
             background: #008200;
             color: white;
         }
-        
+
         .disconnected {
             background: #EC2721;
             color: white;
         }
-        
+
         .connecting {
             background: #ffcc00;
             color: black;
@@ -395,6 +395,8 @@
             timeUntilNextGame: 0,
             nextGameStart: null,
             token: null,
+            user:null,
+            loginStatue: false,
             socket: null,
             results: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
             serverWheelValues: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
@@ -409,16 +411,97 @@
 
         // Initialize when page loads
         window.onload = function () {
-            init();
+            setTimeout(() => {
+                    init();
+            }, 5000);
+          checkAndVerifyToken() 
+         
         };
 
-        function init() {
-            // Check for token
+        
+        // / Token verification function (already provided by you)
+        async function checkAndVerifyToken() {
             try {
-                state.token = sessionStorage.getItem("token");
-            } catch (e) {
-                state.token = null;
+                var token = sessionStorage.getItem("token");
+
+                if (!token) {
+                    console.log('No token found in sessionStorage');
+                    return { valid: false, reason: 'No token found' };
+                }
+
+                // Verify token with your API - Send token in Authorization header as Bearer
+                const response = await fetch('http://localhost:8000/api/token/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token  // Send token as Bearer token
+                    }
+                    // Remove body since we're using Authorization header
+                });
+
+                console.log('Token verification request sent with Authorization header');
+
+                if (!response.ok) {
+                    // Try to get error details
+                    const errorText = await response.text();
+                    console.log('Token verification failed:', response.status, errorText);
+
+                    if (response.status === 401) {
+                        throw new Error('Unauthorized - Invalid or expired token');
+                    } else if (response.status === 400) {
+                        throw new Error('Bad request - Token format error');
+                    } else {
+                        throw new Error('Token verification failed with status: ' + response.status);
+                    }
+                }
+
+                const result = await response.json();
+                console.log('Token verification response:', result);
+
+                if (result.success && result.valid) {
+                    console.log('Token verified successfully:', result.user);
+                    state.user= result.user,
+                    state.token = result.token,
+                    state.status = true
+        
+                } else {
+                    console.log('Token invalid from API:', result.error);
+                    // Clear invalid token
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('username');
+                    sessionStorage.removeItem('userId');
+                    state.user= null,
+                    state.token = null,
+                    state.status = false;
+                }
+            } catch (error) {
+                console.error('Token verification error:', error);
+
+                // Check if it's a network error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    return {
+                        valid: false,
+                        reason: 'Cannot connect to server. Please check if API is running.'
+                    };
+                }
+
+                // Check for auth errors
+                if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+                    // Clear invalid token
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('username');
+                    sessionStorage.removeItem('userId');
+                }
+
+                return {
+                    valid: false,
+                    reason: 'Verification failed: ' + error.message
+                };
             }
+        }
+
+        function init() {
+            
 
             // Initialize socket connection
             initSocket();
@@ -436,7 +519,7 @@
 
         function updateConnectionStatus(status, message) {
             if (!connectionStatusEl) return;
-            
+
             connectionStatusEl.className = 'connection-status ' + status;
             connectionStatusEl.textContent = message;
         }
@@ -452,20 +535,20 @@
                 });
 
                 // Socket event handlers
-                state.socket.on('connect', function() {
+                state.socket.on('connect', function () {
                     console.log('🟢 Connected to game server');
                     updateConnectionStatus('connected', 'Connected');
-                    
+
                     // Request current game state
                     state.socket.emit('get-game-state');
                 });
 
-                state.socket.on('connect_error', function(err) {
+                state.socket.on('connect_error', function (err) {
                     console.log('Connection error:', err);
                     updateConnectionStatus('disconnected', 'Connection Failed');
-                    
+
                     // Fallback: render with demo data
-                    setTimeout(function() {
+                    setTimeout(function () {
                         if (!state.socket || !state.socket.connected) {
                             console.log('Using fallback mode');
                             renderWithFallbackData();
@@ -473,42 +556,42 @@
                     }, 2000);
                 });
 
-                state.socket.on('disconnect', function() {
+                state.socket.on('disconnect', function () {
                     console.log('🔴 Disconnected from server');
                     updateConnectionStatus('disconnected', 'Disconnected');
                 });
 
-                state.socket.on('game-state', function(data) {
+                state.socket.on('game-state', function (data) {
                     console.log('Received game state:', data);
                     handleGameState(data);
                 });
 
-                state.socket.on('game-timer', function(data) {
-                    console.log('Game timer update:', data);
+                state.socket.on('game-timer', function (data) {
+                    // console.log('Game timer update:', data);
                     handleGameTimer(data);
                 });
 
-                state.socket.on('round-start', function(data) {
+                state.socket.on('round-start', function (data) {
                     console.log('Round start:', data);
                     handleRoundStart(data);
                 });
 
-                state.socket.on('wheel-values-update', function(data) {
+                state.socket.on('wheel-values-update', function (data) {
                     console.log('Wheel values update:', data);
                     handleWheelValuesUpdate(data);
                 });
 
-                state.socket.on('game-closed', function(data) {
+                state.socket.on('game-closed', function (data) {
                     console.log('Game closed:', data);
                     handleGameClosed(data);
                 });
 
-                state.socket.on('wheel-result', function(data) {
+                state.socket.on('wheel-result', function (data) {
                     console.log('Wheel result from server:', data);
                     handleWheelResult(data);
                 });
 
-                state.socket.on('game-result', function(data) {
+                state.socket.on('game-result', function (data) {
                     console.log('Game result from server:', data);
                     handleGameResult(data);
                 });
@@ -516,9 +599,9 @@
             } catch (e) {
                 console.log('Socket initialization failed:', e);
                 updateConnectionStatus('disconnected', 'Connection Error');
-                
+
                 // Fallback to demo mode
-                setTimeout(function() {
+                setTimeout(function () {
                     renderWithFallbackData();
                 }, 1000);
             }
@@ -529,16 +612,16 @@
             state.isGameActive = true;
             state.currentRound = 1;
             state.roundTimeLeft = 120;
-            
+
             // Generate random wheel values for demo
             var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
             for (var i = 0; i < wheels.length; i++) {
                 state.serverWheelValues[wheels[i]] = Math.floor(Math.random() * 10);
             }
-            
+
             // Clear previous intervals
             clearTimers();
-            
+
             renderGameScreen();
             initAllWheels();
             startGameTimer();
@@ -552,6 +635,8 @@
             state.roundTimeLeft = data.roundTimeLeft || 0;
             state.timeUntilNextGame = data.timeUntilStart || 0;
             state.nextGameStart = data.nextGameStart || null;
+            state.serverWheelValues = data.currentResults || null;
+
 
             if (data.currentResults) {
                 for (var key in data.currentResults) {
@@ -560,10 +645,22 @@
                     }
                 }
             }
+            var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
+            for (var i = 0; i < wheels.length; i++) {
+                var wheelKey = wheels[i];
+                var targetValue = state.serverWheelValues[wheelKey];
+
+                // Start spinning each wheel with a slight delay
+                setTimeout(function (wheelKey, targetValue) {
+                    return function () {
+                        spinWheel(wheelKey, targetValue);
+                    };
+                }(wheelKey, targetValue), i * 100);
+            }
 
             // Clear previous intervals
             clearTimers();
-            
+
             renderGameScreen();
             initAllWheels();
             startGameTimer();
@@ -581,7 +678,7 @@
             state.currentRound = data.roundNumber;
             state.roundTimeLeft = data.roundTimeLeft;
             state.serverWheelValues = data.wheelValues;
-            
+
             // Don't auto-spin here - let checkAutoSpin handle it
             // Just update UI
             updateSelectorsState();
@@ -592,7 +689,7 @@
         function handleWheelValuesUpdate(data) {
             if (data && data.wheelValues) {
                 state.serverWheelValues = data.wheelValues;
-                console.log('Updated wheel values from server:', state.serverWheelValues);
+                // console.log('Updated wheel values from server:', state.serverWheelValues);
             }
         }
 
@@ -657,7 +754,7 @@
             } else {
                 renderActiveGameScreen(app);
             }
-            
+
             uiInitialized = true;
         }
 
@@ -717,7 +814,7 @@
             var resultsDiv = document.createElement('div');
             resultsDiv.className = 'results-box';
             resultsDiv.onclick = function () {
-                window.location.href = '/history';
+                window.location.href = '/user/history.html';
             };
 
             var resultsHtml = '<div class="results-title">Result</div>' +
@@ -734,7 +831,7 @@
 
                 resultsHtml += '<div class="result-item">' +
                     '<div class="result-label">' + label + '</div>' +
-                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 + val2 + '</div>' +
+                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 +""+ val2 + '</div>' +
                     '</div>';
             }
 
@@ -782,7 +879,7 @@
         function updateStatusMessage() {
             var statusEl = document.getElementById('status-message');
             if (!statusEl) return;
-            
+
             var statusText = 'Round ' + state.currentRound;
             if (state.roundTimeLeft > 0) {
                 statusText += ' | Time left: ' + state.roundTimeLeft + 's';
@@ -866,15 +963,16 @@
             select2.onchange = function () {
                 handleSelectionChange(wheel2Key, this.value);
             };
-
+console.log(state.token , state.user , state.status)
             // Add options
-            addOptionsToSelect(select1, state.userSelections[wheel1Key]);
-            addOptionsToSelect(select2, state.userSelections[wheel2Key]);
+            if (state.user && state.status) {
+                addOptionsToSelect(select1, state.userSelections[wheel1Key]);
+                addOptionsToSelect(select2, state.userSelections[wheel2Key]);
 
-            selectionDiv.appendChild(select1);
-            selectionDiv.appendChild(select2);
-            section.appendChild(selectionDiv);
-
+                selectionDiv.appendChild(select1);
+                selectionDiv.appendChild(select2);
+                section.appendChild(selectionDiv);
+            }
             return section;
         }
 
@@ -1064,7 +1162,7 @@
 
                     // Update results display
                     updateResultsDisplay();
-                    
+
                     // Send individual wheel result to server
                     if (state.socket && state.socket.connected) {
                         state.socket.emit('wheel-result', {
@@ -1095,16 +1193,16 @@
             if (allDone) {
                 state.spinning = false;
                 state.isWaiting = false;
-                
+
                 // Update status
                 updateStatusMessage();
 
                 // Re-enable selection dropdowns
                 updateSelectorsState();
-                
+
                 // Send complete game result to server
                 sendGameResult();
-                
+
                 console.log('All wheels stopped. Results:', state.results);
             }
         }
@@ -1121,7 +1219,7 @@
                 // Update result display
                 var resultElement = document.getElementById('result-' + label.toLowerCase());
                 if (resultElement) {
-                    resultElement.textContent = val1 + val2;
+                    resultElement.textContent = val1 +""+ val2;
                 }
             }
         }
@@ -1152,10 +1250,10 @@
                 for (var i = 0; i < wheels.length; i++) {
                     var wheelKey = wheels[i];
                     var targetValue = state.serverWheelValues[wheelKey];
-                    
+
                     // Start spinning each wheel with a slight delay
-                    setTimeout(function(wheelKey, targetValue) {
-                        return function() {
+                    setTimeout(function (wheelKey, targetValue) {
+                        return function () {
                             spinWheel(wheelKey, targetValue);
                         };
                     }(wheelKey, targetValue), i * 100);
@@ -1168,7 +1266,7 @@
             if (autoSpinInterval) {
                 clearInterval(autoSpinInterval);
             }
-            
+
             autoSpinInterval = setInterval(checkAutoSpin, 1000);
         }
 
@@ -1177,7 +1275,7 @@
             if (gameTimerInterval) {
                 clearInterval(gameTimerInterval);
             }
-            
+
             gameTimerInterval = setInterval(function () {
                 if (state.isGameActive && state.roundTimeLeft > 0) {
                     state.roundTimeLeft--;
@@ -1192,7 +1290,7 @@
                     if (secondsEl) {
                         secondsEl.textContent = padZero(state.roundTimeLeft % 60);
                     }
-                    
+
                     // Update status message
                     updateStatusMessage();
                 }
@@ -1245,9 +1343,9 @@
         function padZero(num) {
             return num < 10 ? '0' + num : num.toString();
         }
-        
+
         // Cleanup on page unload
-        window.onbeforeunload = function() {
+        window.onbeforeunload = function () {
             clearTimers();
             if (state.socket && state.socket.connected) {
                 state.socket.disconnect();
