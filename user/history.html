@@ -397,7 +397,7 @@
 
         // Load history from API
         function loadHistory() {
-            fetch('http://localhost:8000/api/history')
+            fetch('https://newbackend-5z7b.onrender.com/api/history')
                 .then(function (response) {
                     if (!response.ok) {
                         throw new Error('Network response was not ok: ' + response.status);
@@ -551,7 +551,7 @@
                 <div class="empty-state">
                     <div class="icon">⚠️</div>
                     <p>${message}</p>
-                    <p>Please make sure the API server is running at http://localhost:8000</p>
+                    <p>Please make sure the API server is running at https://newbackend-5z7b.onrender.com</p>
                     <button onclick="loadHistory()" style="margin-top: 15px; padding: 8px 16px; background: #fde047; color: black; border: none; border-radius: 5px; cursor: pointer;">
                         Retry
                     </button>

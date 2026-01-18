@@ -430,7 +430,7 @@
                 }
 
                 // Verify token with your API - Send token in Authorization header as Bearer
-                const response = await fetch('http://localhost:8000/api/token/verify', {
+                const response = await fetch('https://newbackend-5z7b.onrender.com/api/token/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -526,7 +526,7 @@
 
         function initSocket() {
             try {
-                state.socket = io('http://localhost:8000', {
+                state.socket = io('https://newbackend-5z7b.onrender.com', {
                     path: '/api/socket',
                     transports: ['websocket', 'polling'],
                     reconnection: true,
