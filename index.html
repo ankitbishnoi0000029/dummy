@@ -395,7 +395,7 @@
             timeUntilNextGame: 0,
             nextGameStart: null,
             token: null,
-            user:null,
+            user: null,
             loginStatue: false,
             socket: null,
             results: { a1: null, a2: null, b1: null, b2: null, c1: null, c2: null },
@@ -412,20 +412,19 @@
         // Initialize when page loads
         window.onload = function () {
             setTimeout(() => {
-                    init();
+                init();
             }, 5000);
-          checkAndVerifyToken() 
-         
+            checkAndVerifyToken()
+
         };
 
-        
+
         // / Token verification function (already provided by you)
         async function checkAndVerifyToken() {
             try {
                 var token = sessionStorage.getItem("token");
 
                 if (!token) {
-                    console.log('No token found in sessionStorage');
                     return { valid: false, reason: 'No token found' };
                 }
 
@@ -439,12 +438,10 @@
                     // Remove body since we're using Authorization header
                 });
 
-                console.log('Token verification request sent with Authorization header');
 
                 if (!response.ok) {
                     // Try to get error details
                     const errorText = await response.text();
-                    console.log('Token verification failed:', response.status, errorText);
 
                     if (response.status === 401) {
                         throw new Error('Unauthorized - Invalid or expired token');
@@ -456,26 +453,23 @@
                 }
 
                 const result = await response.json();
-                console.log('Token verification response:', result);
 
                 if (result.success && result.valid) {
-                    console.log('Token verified successfully:', result.user);
-                    state.user= result.user,
-                    state.token = result.token,
-                    state.status = true
-        
+                    state.user = result.user,
+                        state.token = result.token,
+                        state.status = true
+
                 } else {
-                    console.log('Token invalid from API:', result.error);
                     // Clear invalid token
                     sessionStorage.removeItem('token');
                     sessionStorage.removeItem('username');
                     sessionStorage.removeItem('userId');
-                    state.user= null,
-                    state.token = null,
-                    state.status = false;
+                    state.user = null,
+                        state.token = null,
+                        state.status = false;
                 }
             } catch (error) {
-                console.error('Token verification error:', error);
+                // console.error('Token verification error:', error);
 
                 // Check if it's a network error
                 if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
@@ -501,7 +495,7 @@
         }
 
         function init() {
-            
+
 
             // Initialize socket connection
             initSocket();
@@ -536,7 +530,6 @@
 
                 // Socket event handlers
                 state.socket.on('connect', function () {
-                    console.log('🟢 Connected to game server');
                     updateConnectionStatus('connected', 'Connected');
 
                     // Request current game state
@@ -544,60 +537,49 @@
                 });
 
                 state.socket.on('connect_error', function (err) {
-                    console.log('Connection error:', err);
                     updateConnectionStatus('disconnected', 'Connection Failed');
 
                     // Fallback: render with demo data
                     setTimeout(function () {
                         if (!state.socket || !state.socket.connected) {
-                            console.log('Using fallback mode');
                             renderWithFallbackData();
                         }
                     }, 2000);
                 });
 
                 state.socket.on('disconnect', function () {
-                    console.log('🔴 Disconnected from server');
                     updateConnectionStatus('disconnected', 'Disconnected');
                 });
 
                 state.socket.on('game-state', function (data) {
-                    console.log('Received game state:', data);
                     handleGameState(data);
                 });
 
                 state.socket.on('game-timer', function (data) {
-                    // console.log('Game timer update:', data);
                     handleGameTimer(data);
                 });
 
                 state.socket.on('round-start', function (data) {
-                    console.log('Round start:', data);
                     handleRoundStart(data);
                 });
 
                 state.socket.on('wheel-values-update', function (data) {
-                    console.log('Wheel values update:', data);
                     handleWheelValuesUpdate(data);
                 });
 
                 state.socket.on('game-closed', function (data) {
-                    console.log('Game closed:', data);
                     handleGameClosed(data);
                 });
 
                 state.socket.on('wheel-result', function (data) {
-                    console.log('Wheel result from server:', data);
                     handleWheelResult(data);
                 });
 
                 state.socket.on('game-result', function (data) {
-                    console.log('Game result from server:', data);
                     handleGameResult(data);
                 });
 
             } catch (e) {
-                console.log('Socket initialization failed:', e);
                 updateConnectionStatus('disconnected', 'Connection Error');
 
                 // Fallback to demo mode
@@ -689,7 +671,6 @@
         function handleWheelValuesUpdate(data) {
             if (data && data.wheelValues) {
                 state.serverWheelValues = data.wheelValues;
-                // console.log('Updated wheel values from server:', state.serverWheelValues);
             }
         }
 
@@ -730,7 +711,6 @@
                     c2: state.userSelections.c2,
                     timestamp: Date.now()
                 });
-                console.log('User selections sent to server:', state.userSelections);
             }
         }
 
@@ -741,7 +721,6 @@
                     round: state.currentRound,
                     timestamp: Date.now()
                 });
-                console.log('Game results sent to server:', state.results);
             }
         }
 
@@ -831,7 +810,7 @@
 
                 resultsHtml += '<div class="result-item">' +
                     '<div class="result-label">' + label + '</div>' +
-                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 +""+ val2 + '</div>' +
+                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 + "" + val2 + '</div>' +
                     '</div>';
             }
 
@@ -854,23 +833,6 @@
             closedDiv.innerHTML = '<div class="closed-icon">🌙</div>' +
                 '<div class="closed-title">Game Closed</div>' +
                 '<div class="closed-description">The game is currently closed. Next game starts tomorrow at 9:00 AM.</div>' +
-                '<div class="countdown-box">' +
-                '<div class="countdown-title">Next Game Countdown</div>' +
-                '<div class="countdown-grid">' +
-                '<div class="countdown-item">' +
-                '<div class="countdown-value" id="closed-hours">' + padZero(hours) + '</div>' +
-                '<div class="countdown-label">Hours</div>' +
-                '</div>' +
-                '<div class="countdown-item">' +
-                '<div class="countdown-value" id="closed-minutes">' + padZero(minutes) + '</div>' +
-                '<div class="countdown-label">Minutes</div>' +
-                '</div>' +
-                '<div class="countdown-item">' +
-                '<div class="countdown-value" id="closed-seconds">' + padZero(seconds) + '</div>' +
-                '<div class="countdown-label">Seconds</div>' +
-                '</div>' +
-                '</div>' +
-                '</div>' +
                 '<div style="color:#999;font-size:14px;">Please check back tomorrow for the next game session.</div>';
 
             app.appendChild(closedDiv);
@@ -963,7 +925,6 @@
             select2.onchange = function () {
                 handleSelectionChange(wheel2Key, this.value);
             };
-console.log(state.token , state.user , state.status)
             // Add options
             if (state.user && state.status) {
                 addOptionsToSelect(select1, state.userSelections[wheel1Key]);
@@ -1015,7 +976,6 @@ console.log(state.token , state.user , state.status)
 
             // Send to server
             sendUserSelection();
-            console.log('Selection changed:', wheelKey, numValue);
         }
 
         function initAllWheels() {
@@ -1131,8 +1091,7 @@ console.log(state.token , state.user , state.status)
             var targetAngle = 360 - sliceCenter - 90;
             var finalRotation = wheelRotations[wheelKey] + fullRotation + (targetAngle - currentAngle);
 
-            console.log('Spinning wheel', wheelKey, 'to value', selectedIndex,
-                'sliceCenter:', sliceCenter, 'finalRotation:', finalRotation);
+            //     'sliceCenter:', sliceCenter, 'finalRotation:', finalRotation);
 
             // Animate the spin - FIXED: 7 seconds duration
             var startRotation = wheelRotations[wheelKey];
@@ -1203,26 +1162,52 @@ console.log(state.token , state.user , state.status)
                 // Send complete game result to server
                 sendGameResult();
 
-                console.log('All wheels stopped. Results:', state.results);
             }
         }
 
+
         function updateResultsDisplay() {
-            var labels = ['A', 'B', 'C'];
+            var labels = ['a', 'b', 'c'];
             for (var i = 0; i < labels.length; i++) {
                 var label = labels[i];
-                var key1 = label.toLowerCase() + '1';
-                var key2 = label.toLowerCase() + '2';
+                var key1 = label + '1';
+                var key2 = label + '2';
                 var val1 = state.results[key1] !== null ? state.results[key1] : '-';
                 var val2 = state.results[key2] !== null ? state.results[key2] : '-';
 
-                // Update result display
-                var resultElement = document.getElementById('result-' + label.toLowerCase());
+                // Update result display - add a separator between values
+                var resultElement = document.getElementById('result-' + label);
                 if (resultElement) {
-                    resultElement.textContent = val1 +""+ val2;
+                    resultElement.textContent = val1 + "" + val2; // Added space between values
+                }
+
+                // Also update the wheel canvases to ensure consistency
+                var canvas1 = document.getElementById('canvas-' + key1);
+                var canvas2 = document.getElementById('canvas-' + key2);
+                if (canvas1) {
+                    drawWheel('canvas-' + key1, wheelRotations[key1], val1);
+                }
+                if (canvas2) {
+                    drawWheel('canvas-' + key2, wheelRotations[key2], val2);
                 }
             }
         }
+        // function updateResultsDisplay() {
+        //     var labels = ['A', 'B', 'C'];
+        //     for (var i = 0; i < labels.length; i++) {
+        //         var label = labels[i];
+        //         var key1 = label.toLowerCase() + '1';
+        //         var key2 = label.toLowerCase() + '2';
+        //         var val1 = state.results[key1] !== null ? state.results[key1] : '-';
+        //         var val2 = state.results[key2] !== null ? state.results[key2] : '-';
+
+        //         // Update result display
+        //         var resultElement = document.getElementById('result-' + label.toLowerCase());
+        //         if (resultElement) {
+        //             resultElement.textContent = val1 + "" + val2;
+        //         }
+        //     }
+        // }
 
         function updateSelectorsState() {
             var selects = document.getElementsByTagName('select');
@@ -1243,7 +1228,6 @@ console.log(state.token , state.user , state.status)
                 // Disable selection dropdowns
                 updateSelectorsState();
 
-                console.log('Auto-spin triggered! Time left:', state.roundTimeLeft);
 
                 // Spin all wheels with server values
                 var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
