@@ -793,7 +793,9 @@
             app.innerHTML = '';
 
             if (state.gameClosed) {
+                setTimeout(()=>{
                 renderGameClosedScreen(app);
+                },10000)
             } else {
                 renderActiveGameScreen(app);
             }
