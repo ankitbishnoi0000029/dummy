@@ -34,6 +34,52 @@
 
         }
 
+        /* ================= LOADING SCREEN ================= */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000033;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loader-box {
+            text-align: center;
+        }
+
+        .loader-title {
+            color: #ffcc00;
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .loader-sub {
+            color: #aaa;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 6px solid #222;
+            border-top: 6px solid #ffcc00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ================================================= */
+
         /* Clearfix for old browsers */
         .clearfix:after {
             content: "";
@@ -375,7 +421,13 @@
 
 <body>
     <div id="app"></div>
-
+    <div id="loading-screen">
+        <div class="loader-box">
+            <div class="spinner"></div>
+            <div class="loader-title">Loading Game</div>
+            <div class="loader-sub">Please wait, match is preparing…</div>
+        </div>
+    </div>
     <script type="text/javascript">
         // Game configuration
         var prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
@@ -411,13 +463,22 @@
 
         // Initialize when page loads
         window.onload = function () {
-            setTimeout(() => {
+            showLoading();
                 init();
-            }, 5000);
+            
             checkAndVerifyToken()
 
         };
 
+        function showLoading() {
+            var el = document.getElementById('loading-screen');
+            if (el) el.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            var el = document.getElementById('loading-screen');
+            if (el) el.style.display = 'none';
+        }
 
         // / Token verification function (already provided by you)
         async function checkAndVerifyToken() {
@@ -429,7 +490,7 @@
                 }
 
                 // Verify token with your API - Send token in Authorization header as Bearer
-                const response = await fetch('https://newbackend-5z7b.onrender.com/api/token/verify', {
+                const response = await fetch('http://localhost:8000/api/token/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -502,6 +563,7 @@
 
             // Create connection status indicator
             createConnectionStatus();
+            hideLoading();
         }
 
         function createConnectionStatus() {
@@ -520,7 +582,7 @@
 
         function initSocket() {
             try {
-                state.socket = io('https://newbackend-5z7b.onrender.com', {
+                state.socket = io('http://localhost:8000', {
                     path: '/api/socket',
                     transports: ['websocket', 'polling'],
                     reconnection: true,
@@ -591,6 +653,8 @@
 
         function renderWithFallbackData() {
             // Use demo data when socket fails
+
+
             state.isGameActive = true;
             state.currentRound = 1;
             state.roundTimeLeft = 120;
@@ -664,7 +728,7 @@
             // Don't auto-spin here - let checkAutoSpin handle it
             // Just update UI
             updateSelectorsState();
-            updateResultsDisplay();
+            // updateResultsDisplay();
             updateStatusMessage();
         }
 
@@ -685,7 +749,7 @@
         function handleWheelResult(data) {
             if (data && data.wheel && data.result !== undefined) {
                 state.results[data.wheel] = data.result;
-                updateResultsDisplay();
+                // updateResultsDisplay();
             }
         }
 
@@ -696,7 +760,7 @@
                         state.results[key] = data.results[key];
                     }
                 }
-                updateResultsDisplay();
+                // updateResultsDisplay();
             }
         }
 
@@ -1066,7 +1130,7 @@
 
             // Draw result if available
             if (result !== null && result !== undefined) {
-                ctx.fillStyle = 'white';
+                ctx.fillStyle = 'black';
                 ctx.font = 'bold 20px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -1120,7 +1184,24 @@
                     drawWheel('canvas-' + wheelKey, wheelRotations[wheelKey], selectedIndex);
 
                     // Update results display
-                    updateResultsDisplay();
+                    var labels = ['a', 'b', 'c'];
+
+                    for (var i = 0; i < labels.length; i++) {
+                        var label = labels[i];
+                        var key1 = label + '1';
+                        var key2 = label + '2';
+
+                        var val1 = state.results[key1];
+                        var val2 = state.results[key2];
+
+                        var display1 = (val1 !== null && val1 !== undefined) ? val1 : '-';
+                        var display2 = (val2 !== null && val2 !== undefined) ? val2 : '-';
+
+                        var resultElement = document.getElementById('result-' + label);
+                        if (resultElement) {
+                            resultElement.textContent = display1 + "" + display2;
+                        }
+                    }
 
                     // Send individual wheel result to server
                     if (state.socket && state.socket.connected) {
@@ -1167,25 +1248,25 @@
 
 
         function updateResultsDisplay() {
-    var labels = ['a', 'b', 'c'];
+            var labels = ['a', 'b', 'c'];
 
-    for (var i = 0; i < labels.length; i++) {
-        var label = labels[i];
-        var key1 = label + '1';
-        var key2 = label + '2';
+            for (var i = 0; i < labels.length; i++) {
+                var label = labels[i];
+                var key1 = label + '1';
+                var key2 = label + '2';
 
-        var val1 = state.results[key1];
-        var val2 = state.results[key2];
+                var val1 = state.results[key1];
+                var val2 = state.results[key2];
 
-        var display1 = (val1 !== null && val1 !== undefined) ? val1 : '-';
-        var display2 = (val2 !== null && val2 !== undefined) ? val2 : '-';
+                var display1 = (val1 !== null && val1 !== undefined) ? val1 : '-';
+                var display2 = (val2 !== null && val2 !== undefined) ? val2 : '-';
 
-        var resultElement = document.getElementById('result-' + label);
-        if (resultElement) {
-            resultElement.textContent = display1 + "" + display2;
+                var resultElement = document.getElementById('result-' + label);
+                if (resultElement) {
+                    resultElement.textContent = display1 + "" + display2;
+                }
+            }
         }
-    }
-}
 
         // function updateResultsDisplay() {
         //     var labels = ['A', 'B', 'C'];
@@ -1322,6 +1403,8 @@
         function padZero(num) {
             return num < 10 ? '0' + num : num.toString();
         }
+
+
 
         // Cleanup on page unload
         window.onbeforeunload = function () {
