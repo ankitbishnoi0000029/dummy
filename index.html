@@ -392,6 +392,21 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <script type="text/javascript">
+        /**
+         * BACKEND SYNCHRONIZATION FLOW:
+         * ================================
+         * 1. Wheel spins with selectedIndex value
+         * 2. When animation completes → Send selectedIndex to backend
+         * 3. Backend validates and returns confirmed value
+         * 4. Frontend displays ONLY the backend-confirmed value
+         * 5. All users see the SAME result from backend
+         * 
+         * This ensures:
+         * - No local calculation differences
+         * - Everyone sees identical results
+         * - Backend is the single source of truth
+         */
+        
         // Game configuration
         var prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
         var colors = [
@@ -578,6 +593,14 @@
                 state.socket.on('game-result', function (data) {
                     handleGameResult(data);
                 });
+                
+                // Listen for broadcasted results to all clients
+                state.socket.on('result-broadcast', function (data) {
+                    console.log('Received broadcast result:', data);
+                    if (data && data.results) {
+                        handleGameResult(data);
+                    }
+                });
 
             } catch (e) {
                 updateConnectionStatus('disconnected', 'Connection Error');
@@ -674,17 +697,44 @@
 
         function handleWheelResult(data) {
             if (data && data.wheel && data.result !== undefined) {
+                console.log('Received wheel result from backend:', data.wheel, '=', data.result);
+                
+                // Backend is the source of truth - use this value
                 state.results[data.wheel] = data.result;
+                
+                // Update the wheel rotation to match backend result
+                var sliceAngle = 360 / prizes.length;
+                var targetSliceCenter = data.result * sliceAngle + (sliceAngle / 2);
+                wheelRotations[data.wheel] = -targetSliceCenter;
+                
+                // Redraw wheel and update display
+                drawWheel('canvas-' + data.wheel, wheelRotations[data.wheel], data.result);
+                updateResultsDisplay();
             }
         }
 
         function handleGameResult(data) {
             if (data && data.results) {
+                console.log('Received complete game results from backend:', data.results);
+                
+                // Backend is source of truth - update ALL results
                 for (var key in data.results) {
                     if (data.results.hasOwnProperty(key)) {
-                        state.results[key] = data.results[key];
+                        var value = data.results[key];
+                        state.results[key] = value;
+                        
+                        // Update wheel positions to match backend
+                        if (value !== null && value !== undefined) {
+                            var sliceAngle = 360 / prizes.length;
+                            var targetSliceCenter = value * sliceAngle + (sliceAngle / 2);
+                            wheelRotations[key] = -targetSliceCenter;
+                            drawWheel('canvas-' + key, wheelRotations[key], value);
+                        }
                     }
                 }
+                
+                // Update display with backend results
+                updateResultsDisplay();
             }
         }
 
@@ -697,16 +747,6 @@
                     b2: state.userSelections.b2,
                     c1: state.userSelections.c1,
                     c2: state.userSelections.c2,
-                    timestamp: Date.now()
-                });
-            }
-        }
-
-        function sendGameResult() {
-            if (state.socket && state.socket.connected) {
-                state.socket.emit('game-result', {
-                    results: state.results,
-                    round: state.currentRound,
                     timestamp: Date.now()
                 });
             }
@@ -789,12 +829,25 @@
                 var label = labels[i];
                 var key1 = label.toLowerCase() + '1';
                 var key2 = label.toLowerCase() + '2';
-                var val1 = state.results[key1] !== null && state.results[key1] !== undefined ? state.results[key1] : '-';
-                var val2 = state.results[key2] !== null && state.results[key2] !== undefined ? state.results[key2] : '-';
+                
+                var val1 = state.results[key1];
+                var val2 = state.results[key2];
+                
+                // Create two-digit display
+                var displayValue = '';
+                if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
+                    displayValue = val1.toString() + val2.toString();
+                } else if (val1 !== null && val1 !== undefined) {
+                    displayValue = val1.toString() + '-';
+                } else if (val2 !== null && val2 !== undefined) {
+                    displayValue = '-' + val2.toString();
+                } else {
+                    displayValue = '--';
+                }
 
                 resultsHtml += '<div class="result-item">' +
                     '<div class="result-label">' + label + '</div>' +
-                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + val1 + '' + val2 + '</div>' +
+                    '<div class="result-value" id="result-' + label.toLowerCase() + '">' + displayValue + '</div>' +
                     '</div>';
             }
 
@@ -903,14 +956,14 @@
                 handleSelectionChange(wheel2Key, this.value);
             };
 
-            // if (state.user && state.status) {
+            if (state.user && state.status) {
                 addOptionsToSelect(select1, state.userSelections[wheel1Key]);
                 addOptionsToSelect(select2, state.userSelections[wheel2Key]);
 
                 selectionDiv.appendChild(select1);
                 selectionDiv.appendChild(select2);
                 section.appendChild(selectionDiv);
-            // }
+            }
             return section;
         }
 
@@ -1107,7 +1160,7 @@
             var allDone = true;
             var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
             for (var i = 0; i < wheels.length; i++) {
-                if (state.results[wheels[i]] === null) {
+                if (state.results[wheels[i]] === null || state.results[wheels[i]] === undefined) {
                     allDone = false;
                     break;
                 }
@@ -1121,7 +1174,21 @@
                 updateResultsDisplay();
                 updateSelectorsState();
 
-                sendGameResult();
+                // Send complete game result with ONLY wheel stopped values
+                if (state.socket && state.socket.connected) {
+                    state.socket.emit('game-result', {
+                        results: {
+                            a1: state.results.a1,
+                            a2: state.results.a2,
+                            b1: state.results.b1,
+                            b2: state.results.b2,
+                            c1: state.results.c1,
+                            c2: state.results.c2
+                        },
+                        round: state.currentRound,
+                        timestamp: Date.now()
+                    });
+                }
             }
         }
 
@@ -1136,12 +1203,21 @@
                 var val1 = state.results[key1];
                 var val2 = state.results[key2];
 
-                var display1 = (val1 !== null && val1 !== undefined) ? val1 : '-';
-                var display2 = (val2 !== null && val2 !== undefined) ? val2 : '-';
+                // Create two-digit display: first wheel digit + second wheel digit
+                var display = '';
+                if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
+                    display = val1.toString() + val2.toString();
+                } else if (val1 !== null && val1 !== undefined) {
+                    display = val1.toString() + '-';
+                } else if (val2 !== null && val2 !== undefined) {
+                    display = '-' + val2.toString();
+                } else {
+                    display = '--';
+                }
 
                 var resultElement = document.getElementById('result-' + label);
                 if (resultElement) {
-                    resultElement.textContent = display1 + '' + display2;
+                    resultElement.textContent = display;
                 }
             }
         }
@@ -1161,10 +1237,16 @@
                 updateStatusMessage();
                 updateSelectorsState();
 
+                console.log('Auto-spin triggered, using server values:', state.serverWheelValues);
+
                 var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
                 for (var i = 0; i < wheels.length; i++) {
                     var wheelKey = wheels[i];
+                    // Use server value if available, otherwise random
                     var targetValue = state.serverWheelValues[wheelKey];
+                    if (targetValue === null || targetValue === undefined) {
+                        targetValue = Math.floor(Math.random() * 10);
+                    }
 
                     setTimeout(function (wheelKey, targetValue) {
                         return function () {
