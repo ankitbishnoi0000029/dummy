@@ -1238,7 +1238,7 @@
 
                 // Update status
                 updateStatusMessage();
-
+                updateResultsDisplay();
                 // Re-enable selection dropdowns
                 updateSelectorsState();
 
@@ -1296,7 +1296,7 @@
 
         function checkAutoSpin() {
             // Only auto-spin when 30 seconds left and not already spinning
-            if (state.roundTimeLeft <= 7 && state.isGameActive && !state.spinning && !state.isWaiting) {
+            if (state.roundTimeLeft == 7 && state.isGameActive && !state.spinning && !state.isWaiting) {
                 state.spinning = true;
                 state.isWaiting = true;
 
