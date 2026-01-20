@@ -1167,31 +1167,26 @@
 
 
         function updateResultsDisplay() {
-            var labels = ['a', 'b', 'c'];
-            for (var i = 0; i < labels.length; i++) {
-                var label = labels[i];
-                var key1 = label + '1';
-                var key2 = label + '2';
-                var val1 = state.results[key1] !== null ? state.results[key1] : '-';
-                var val2 = state.results[key2] !== null ? state.results[key2] : '-';
+    var labels = ['a', 'b', 'c'];
 
-                // Update result display - add a separator between values
-                var resultElement = document.getElementById('result-' + label);
-                if (resultElement) {
-                    resultElement.textContent = val1 + "" + val2; // Added space between values
-                }
+    for (var i = 0; i < labels.length; i++) {
+        var label = labels[i];
+        var key1 = label + '1';
+        var key2 = label + '2';
 
-                // Also update the wheel canvases to ensure consistency
-                var canvas1 = document.getElementById('canvas-' + key1);
-                var canvas2 = document.getElementById('canvas-' + key2);
-                if (canvas1) {
-                    drawWheel('canvas-' + key1, wheelRotations[key1], val1);
-                }
-                if (canvas2) {
-                    drawWheel('canvas-' + key2, wheelRotations[key2], val2);
-                }
-            }
+        var val1 = state.results[key1];
+        var val2 = state.results[key2];
+
+        var display1 = (val1 !== null && val1 !== undefined) ? val1 : '-';
+        var display2 = (val2 !== null && val2 !== undefined) ? val2 : '-';
+
+        var resultElement = document.getElementById('result-' + label);
+        if (resultElement) {
+            resultElement.textContent = display1 + "" + display2;
         }
+    }
+}
+
         // function updateResultsDisplay() {
         //     var labels = ['A', 'B', 'C'];
         //     for (var i = 0; i < labels.length; i++) {
