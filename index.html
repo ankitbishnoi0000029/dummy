@@ -455,7 +455,7 @@
                     return { valid: false, reason: 'No token found' };
                 }
 
-                const response = await fetch('https://newbackend-5z7b.onrender.com/api/token/verify', {
+                const response = await fetch('http://localhost:8000/api/token/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -531,7 +531,7 @@
 
         function initSocket() {
             try {
-                state.socket = io('https://newbackend-5z7b.onrender.com', {
+                state.socket = io('http://localhost:8000', {
                     path: '/api/socket',
                     transports: ['websocket', 'polling'],
                     reconnection: true,
@@ -1186,7 +1186,7 @@
 
             var hasInput = targetValue !== undefined && targetValue !== null;
             var selectedIndex = hasInput ? targetValue : Math.floor(Math.random() * prizes.length);
-            console.log('input and render value', wheelKey, '=>>>>>', selectedIndex)
+
             if (state.socket && state.socket.connected) {
                 state.socket.emit('wheel-result', {
                     wheel: wheelKey,
@@ -1228,10 +1228,11 @@
 
                 drawWheel('canvas-' + wheelKey, wheelRotations[wheelKey]);
 
+
                 if (progress < 1) {
                     setTimeout(animate, 16);
                 } else {
-
+                    // console.log('input and render value', wheelKey, '=>>>>>', selectedIndex)
                     wheelRotations[wheelKey] = endRotation;
                     state.results[wheelKey] = selectedIndex;
                     drawWheel('canvas-' + wheelKey, wheelRotations[wheelKey], selectedIndex);
@@ -1298,41 +1299,44 @@
                     if (data && typeof data.wheel === "string" && data.round === state.currentRound) {
                         state.results[data.wheel] = data.result;
 
-                        // Update visual display
+                        // After any wheel result comes in, update ALL labels (a, b, c)
                         var labels = ['a', 'b', 'c'];
-                        for (var i = 0; i < labels.length; i++) {
-                            var label = labels[i];
-                            var key1 = label + '1';
-                            var key2 = label + '2';
+                        setTimeout(() => {
+                            for (var i = 0; i < labels.length; i++) {
+                                var label = labels[i];
+                                var key1 = label + '1';
+                                var key2 = label + '2';
 
-                            var val1 = state.results[key1];
-                            var val2 = state.results[key2];
+                                var val1 = state.results[key1];
+                                var val2 = state.results[key2];
 
-                            var display = '';
-                            if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
-                                display = val1.toString() + val2.toString();
-                            } else if (val1 !== null && val1 !== undefined) {
-                                display = val1.toString() + '-';
-                            } else if (val2 !== null && val2 !== undefined) {
-                                display = '-' + val2.toString();
-                            } else {
-                                display = '--';
+                                var display = '';
+                                if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
+                                    display = val1.toString() + val2.toString();
+                                } else if (val1 !== null && val1 !== undefined) {
+                                    display = val1.toString() + '-';
+                                } else if (val2 !== null && val2 !== undefined) {
+                                    display = '-' + val2.toString();
+                                } else {
+                                    display = '--';
+                                }
+
+                                var resultElement = document.getElementById('result-' + label);
+                                if (resultElement) {
+                                    resultElement.textContent = display;
+                                    console.log('✅ Updated result display:', label, '=', display);
+                                }
                             }
-
-                            var resultElement = document.getElementById('result-' + label);
-                            if (resultElement) {
-                                resultElement.textContent = display;
-                                console.log('✅ Updated result display:', label, '=', display);
-                            }
-                        }
+                        }, 6000);
                     }
                 });
+            }
                 // To prevent attaching the listener multiple times
                 state._resultsListenerAttached = true;
             }
 
             // Show whatever is currently in state.results (for initial/manual update)
-        }
+        
 
         function updateSelectorsState() {
             var selects = document.getElementsByTagName('select');
