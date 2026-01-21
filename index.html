@@ -385,16 +385,7 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
     <script type="text/javascript">
-        /**
-         * PRODUCTION FIXED VERSION
-         * ========================
-         * ✅ Initial load पर पिछला result दिखता है
-         * ✅ Wheels पिछली position पर रुकते हैं
-         * ✅ Match खत्म होने पर results display होते हैं
-         * ✅ Dropdown values नए round में reset होती हैं
-         * ✅ Round-based result locking
-         * ✅ Proper state management
-         */
+        
 
         var prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
         var colors = [
@@ -455,7 +446,7 @@
                     return { valid: false, reason: 'No token found' };
                 }
 
-                const response = await fetch('http://localhost:8000/api/token/verify', {
+                const response = await fetch('https://newbackend-5z7b.onrender.com/api/token/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -531,7 +522,7 @@
 
         function initSocket() {
             try {
-                state.socket = io('http://localhost:8000', {
+                state.socket = io('https://newbackend-5z7b.onrender.com', {
                     path: '/api/socket',
                     transports: ['websocket', 'polling'],
                     reconnection: true,
@@ -540,7 +531,6 @@
                 });
 
                 state.socket.on('connect', function () {
-                    console.log('✅ Socket connected');
                     updateConnectionStatus('connected', 'Connected');
                     state.socket.emit('get-game-state');
                 });
@@ -556,12 +546,10 @@
                 });
 
                 state.socket.on('disconnect', function () {
-                    console.log('⚠️ Socket disconnected');
                     updateConnectionStatus('disconnected', 'Disconnected');
                 });
 
                 state.socket.on('game-state', function (data) {
-                    console.log('📥 Received game-state:', data);
                     handleGameState(data);
                 });
 
@@ -570,7 +558,6 @@
                 });
 
                 state.socket.on('round-start', function (data) {
-                    console.log('🎮 Round started:', data);
                     handleRoundStart(data);
                 });
 
@@ -579,7 +566,6 @@
                 });
 
                 state.socket.on('game-closed', function (data) {
-                    console.log('🔒 Game closed:', data);
                     handleGameClosed(data);
                 });
 
@@ -588,12 +574,10 @@
                 });
 
                 state.socket.on('game-result', function (data) {
-                    console.log('🎯 Game result received:', data);
                     handleGameResult(data);
                 });
 
                 state.socket.on('result-broadcast', function (data) {
-                    console.log('📢 Broadcast result:', data);
                     if (data && data.results) {
                         handleGameResult(data);
                     }
@@ -609,7 +593,6 @@
         }
 
         function renderWithFallbackData() {
-            console.log('⚠️ Using fallback data');
             state.isGameActive = true;
             state.currentRound = 1;
             state.roundTimeLeft = 120;
@@ -634,16 +617,11 @@
             startAutoSpinCheck();
         }
 
-        // ✅ FIX 1: Initial load पर पिछला result दिखाना
         function handleGameState(data) {
-            console.log('🔄 Processing game state...', data);
 
             var isNewRound = data.currentRound > state.lastProcessedRound;
 
             if (isNewRound) {
-                console.log('🆕 New round detected:', data.currentRound);
-
-                // पिछले round के results को save करें
                 if (state.results.a1 !== null) {
                     state.previousRoundResults = {
                         a1: state.results.a1,
@@ -653,14 +631,12 @@
                         c1: state.results.c1,
                         c2: state.results.c2
                     };
-                    console.log('💾 Saved previous results:', state.previousRoundResults);
                 }
 
                 state.resultsLocked = false;
                 state.lockedRound = null;
                 state.lastProcessedRound = data.currentRound;
 
-                // ✅ Dropdown values को reset करें
                 resetAllDropdowns();
             }
 
@@ -671,12 +647,10 @@
             state.timeUntilNextGame = data.timeUntilStart || 0;
             state.nextGameStart = data.nextGameStart || null;
 
-            // ✅ FIX 2: Wheels को proper position पर set करना
             if (!state.resultsLocked || isNewRound) {
                 state.serverWheelValues = data.currentResults || {};
 
                 if (data.currentResults) {
-                    console.log('🎡 Setting wheel positions:', data.currentResults);
 
                     for (var key in data.currentResults) {
                         if (data.currentResults.hasOwnProperty(key)) {
@@ -697,21 +671,16 @@
             startGameTimer();
             startAutoSpinCheck();
 
-            // ✅ Initial results display करें
             updateResultsDisplay();
         }
 
-        // ✅ नया function: Wheel position set करने के लिए
         function setWheelPosition(wheelKey, value) {
             var sliceAngle = 360 / prizes.length;
             var targetSliceCenter = value * sliceAngle + (sliceAngle / 2);
             wheelRotations[wheelKey] = -targetSliceCenter;
-            console.log('🎯 Set wheel', wheelKey, 'to position:', value, 'rotation:', wheelRotations[wheelKey]);
         }
 
-        // ✅ नया function: सभी dropdowns को reset करना
         function resetAllDropdowns() {
-            console.log('🔄 Resetting all dropdowns');
 
             state.userSelections = {
                 a1: undefined,
@@ -722,14 +691,12 @@
                 c2: undefined
             };
 
-            // UI में भी update करें
             var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
             for (var i = 0; i < wheels.length; i++) {
                 var wheelKey = wheels[i];
                 var selectEl = document.getElementById('select-' + wheelKey);
                 if (selectEl) {
                     selectEl.value = '';
-                    console.log('✅ Reset dropdown:', wheelKey);
                 }
             }
         }
@@ -741,9 +708,7 @@
             updateTimerOnly();
         }
 
-        // ✅ FIX 3: Round start पर proper reset
         function handleRoundStart(data) {
-            console.log('🎮 Round start handler:', data);
 
             state.currentRound = data.roundNumber;
             state.roundTimeLeft = data.roundTimeLeft;
@@ -751,7 +716,6 @@
             state.lockedRound = null;
             state.lastProcessedRound = data.roundNumber;
 
-            // ✅ Results को clear करें नए round के लिए
             state.results = {
                 a1: null, a2: null,
                 b1: null, b2: null,
@@ -760,7 +724,6 @@
 
             state.serverWheelValues = data.wheelValues || {};
 
-            // ✅ Dropdowns reset करें
             resetAllDropdowns();
 
             updateSelectorsState();
@@ -784,12 +747,10 @@
 
         function handleWheelResult(data) {
             // if (state.wheelAnimationInProgress || state.resultsLocked) {
-            //     console.log('⏭️ Ignoring wheel result - animation/locked');
             //     return;
             // }
 
             if (data && data.wheel && data.result !== undefined) {
-                console.log('🎯 Wheel result:', data.wheel, '=', data.result);
 
                 state.results[data.wheel] = data.result;
                 setWheelPosition(data.wheel, data.result);
@@ -798,7 +759,6 @@
             }
         }
 
-        // ✅ FIX 4: Game result handler - proper display
         function handleGameResult(data) {
             if (!data || !data.results) {
                 console.warn('⚠️ Invalid game result data');
@@ -808,18 +768,13 @@
             var resultRound = data.round || state.currentRound;
 
             if (state.resultsLocked && state.lockedRound === resultRound) {
-                console.log('🔒 Results already locked for round', resultRound);
                 return;
             }
 
-            console.log('🎯 Locking results for round', resultRound);
-            console.log('📊 Results:', data.results);
 
-            // ✅ Results को lock करें
             state.resultsLocked = true;
             state.lockedRound = resultRound;
 
-            // ✅ सभी results को update और display करें
             for (var key in data.results) {
                 if (data.results.hasOwnProperty(key)) {
                     var value = data.results[key];
@@ -832,10 +787,8 @@
                 }
             }
 
-            // ✅ Results को तुरंत display करें
             updateResultsDisplay();
 
-            console.log('✅ Results displayed successfully');
         }
 
         function sendUserSelection() {
@@ -849,7 +802,6 @@
                     c2: state.userSelections.c2,
                     timestamp: Date.now()
                 });
-                console.log('📤 Sent selections:', state.userSelections);
             }
         }
 
@@ -1059,11 +1011,11 @@
 
             addOptionsToSelect(select1, state.userSelections[wheel1Key]);
             addOptionsToSelect(select2, state.userSelections[wheel2Key]);
-
+            if(state.user && state.status){
             selectionDiv.appendChild(select1);
             selectionDiv.appendChild(select2);
             section.appendChild(selectionDiv);
-
+            }
             return section;
         }
 
@@ -1093,7 +1045,6 @@
             var numValue = (value === '' || value === 'X') ? undefined : parseInt(value);
             state.userSelections[wheelKey] = numValue;
 
-            console.log('🎯 Selection:', wheelKey, '=', numValue);
             sendUserSelection();
         }
 
@@ -1232,7 +1183,6 @@
                 if (progress < 1) {
                     setTimeout(animate, 16);
                 } else {
-                    // console.log('input and render value', wheelKey, '=>>>>>', selectedIndex)
                     wheelRotations[wheelKey] = endRotation;
                     state.results[wheelKey] = selectedIndex;
                     drawWheel('canvas-' + wheelKey, wheelRotations[wheelKey], selectedIndex);
@@ -1278,7 +1228,6 @@
                         timestamp: Date.now()
                     };
 
-                    console.log('📤 Sending game result:', gameResultData);
                     state.socket.emit('game-result', gameResultData);
 
                     state.resultsLocked = true;
@@ -1290,7 +1239,6 @@
             }
         }
 
-        // ✅ FIX 5: Results को properly display करना
         function updateResultsDisplay() {
             // Listen for 'wheel-result' events on the socket and update results in real time
             if (state.socket && !state._resultsListenerAttached) {
@@ -1324,7 +1272,6 @@
                                 var resultElement = document.getElementById('result-' + label);
                                 if (resultElement) {
                                     resultElement.textContent = display;
-                                    console.log('✅ Updated result display:', label, '=', display);
                                 }
                             }
                         }, 6000);
@@ -1346,18 +1293,15 @@
                 selects[i].disabled = shouldDisable;
             }
 
-            console.log('🔄 Selectors state:', shouldDisable ? 'disabled' : 'enabled');
         }
 
         function checkAutoSpin() {
-            console.log('state', state,)
             if (state.roundTimeLeft === 7 && state.isGameActive) {
                 state.spinning = true;
                 state.isWaiting = true;
 
 
 
-                console.log('🎰 Auto-spin triggered for round', state.currentRound);
 
                 var wheels = ['a1', 'a2', 'b1', 'b2', 'c1', 'c2'];
                 for (var i = 0; i < wheels.length; i++) {
@@ -1369,7 +1313,6 @@
                     }
 
 
-                    console.log('🎡 Spinning', wheelKey, '→', targetValue);
 
                     setTimeout(function (wheelKey, targetValue) {
                         return function () {
