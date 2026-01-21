@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,9 +46,7 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         .loader-title {
@@ -157,7 +154,7 @@
             border-right: 15px solid transparent;
             border-top: 25px solid #ffcc00;
             z-index: 10;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
 
         canvas {
@@ -245,7 +242,7 @@
             font-size: 18px;
         }
 
-        .timer-box>div:last-child {
+        .timer-box > div:last-child {
             display: flex;
             gap: 20px;
             justify-content: center;
@@ -384,7 +381,6 @@
         }
     </style>
 </head>
-
 <body>
     <div id="app"></div>
     <div id="loading-screen">
@@ -410,7 +406,7 @@
          * - Everyone sees identical results
          * - Backend is the single source of truth
          */
-
+        
         // Game configuration
         var prizes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
         var colors = [
@@ -555,7 +551,7 @@
                 state.socket.on('connect', function () {
                     updateConnectionStatus('connected', 'Connected');
                     state.socket.emit('get-game-state');
-
+            
                 });
 
                 state.socket.on('connect_error', function (err) {
@@ -598,7 +594,7 @@
                 state.socket.on('game-result', function (data) {
                     handleGameResult(data);
                 });
-
+                
                 // Listen for broadcasted results to all clients
                 state.socket.on('result-broadcast', function (data) {
                     console.log('Received broadcast result:', data);
@@ -626,7 +622,7 @@
                 var randomValue = Math.floor(Math.random() * 10);
                 state.serverWheelValues[wheelKey] = randomValue;
                 state.results[wheelKey] = randomValue;
-
+                
                 // Set initial rotation to show result without animation
                 var sliceAngle = 360 / prizes.length;
                 var targetSliceCenter = randomValue * sliceAngle + (sliceAngle / 2);
@@ -703,15 +699,15 @@
         function handleWheelResult(data) {
             if (data && data.wheel && data.result !== undefined) {
                 // console.log('Received wheel result from backend :', data.wheel, '=', data.result);
-
+                
                 // Backend is the source of truth - use this value
                 state.results[data.wheel] = data.result;
-
+                
                 // Update the wheel rotation to match backend result
                 var sliceAngle = 360 / prizes.length;
                 var targetSliceCenter = data.result * sliceAngle + (sliceAngle / 2);
                 wheelRotations[data.wheel] = -targetSliceCenter;
-
+                
                 // Redraw wheel and update display
                 drawWheel('canvas-' + data.wheel, wheelRotations[data.wheel], data.result);
                 updateResultsDisplay();
@@ -723,14 +719,14 @@
 
             if (data && data.results) {
                 // console.log('Received complete game results from backend:', data.results);
-                // console.warn('handleWheelResult after',data)
-
+            // console.warn('handleWheelResult after',data)
+                
                 // Backend is source of truth - update ALL results
                 for (var key in data.results) {
                     if (data.results.hasOwnProperty(key)) {
                         var value = data.results[key];
                         state.results[key] = value;
-
+                        
                         // Update wheel positions to match backend
                         if (value !== null && value !== undefined) {
                             var sliceAngle = 360 / prizes.length;
@@ -740,7 +736,7 @@
                         }
                     }
                 }
-
+                
                 // Update display with backend results
                 updateResultsDisplay();
             }
@@ -765,7 +761,7 @@
             app.innerHTML = '';
 
             if (state.gameClosed) {
-                setTimeout(function () {
+                setTimeout(function() {
                     renderGameClosedScreen(app);
                 }, 10000);
             } else {
@@ -837,10 +833,10 @@
                 var label = labels[i];
                 var key1 = label.toLowerCase() + '1';
                 var key2 = label.toLowerCase() + '2';
-
+                
                 var val1 = state.results[key1];
                 var val2 = state.results[key2];
-
+                
                 // Create two-digit display
                 var displayValue = '';
                 if (val1 !== null && val1 !== undefined && val2 !== null && val2 !== undefined) {
@@ -1007,7 +1003,7 @@
                     select.options[i].selected = select.options[i].value === value;
                 }
             }
-            console.log('state.userSelections', state.userSelections)
+console.log('state.userSelections',state.userSelections)
             sendUserSelection();
         }
 
@@ -1107,18 +1103,18 @@
             // Since we draw starting at -90 degrees (top), and segments go clockwise
             // We need to rotate so the CENTER of the selected segment is at top
             var targetSliceCenter = selectedIndex * sliceAngle + (sliceAngle / 2);
-
+            
             // Calculate how much to rotate to bring that segment to the top
             // We need to rotate counter to the segment position
             var currentRotation = wheelRotations[wheelKey] % 360;
             var neededRotation = -targetSliceCenter;
-
+            
             // Normalize to positive angle
             while (neededRotation < 0) neededRotation += 360;
-
+            
             // Add full rotations and final position
             var finalRotation = wheelRotations[wheelKey] + fullRotation + (neededRotation - currentRotation);
-
+            
             // Make sure we always rotate forward
             if (finalRotation < wheelRotations[wheelKey]) {
                 finalRotation += 360;
@@ -1149,15 +1145,15 @@
 
                     updateResultsDisplay();
 
-                    // if (state.socket && state.socket.connected) {
-                    //     state.socket.emit('wheel-result', {
-                    //         wheel: wheelKey,
-                    //         result: selectedIndex,
-                    //         timestamp: Date.now()
-                    //     });
-                    // }
+                    if (state.socket && state.socket.connected) {
+                        state.socket.emit('wheel-result', {
+                            wheel: wheelKey,
+                            result: selectedIndex,
+                            timestamp: Date.now()
+                        });
+                    }
                     updateSelectorsState();
-                    // checkAllWheelsComplete();
+                    checkAllWheelsComplete();
                 }
             }
 
@@ -1336,5 +1332,4 @@
         };
     </script>
 </body>
-
 </html>
