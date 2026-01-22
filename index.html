@@ -44,7 +44,6 @@
         .wheel-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 20px;
             border: 2px solid rgba(255, 204, 0, 0.3);
         }
 
@@ -53,14 +52,14 @@
             font-weight: bold;
             color: #ffcc00;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
         }
 
         .wheel-pair {
             display: flex;
             justify-content: space-around;
             gap: 20px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
         }
 
         .wheel-container {
@@ -1246,7 +1245,7 @@
                     // data: { wheel, result, round, timestamp }
                     if (data && typeof data.wheel === "string" && data.round === state.currentRound) {
                         state.results[data.wheel] = data.result;
-
+ 
                         // After any wheel result comes in, update ALL labels (a, b, c)
                         var labels = ['a', 'b', 'c'];
                         setTimeout(() => {
